@@ -6,6 +6,5 @@
 
 print("Mikhail is here")
 
-
 def main():
-  print("Luke is cool")
+  print("Luke is cool") 
