@@ -5,3 +5,7 @@
 # estimate of the amount of impulse required to get to that height 
 
 print("Mikhail is here")
+
+
+def main():
+  print("Luke is cool")
