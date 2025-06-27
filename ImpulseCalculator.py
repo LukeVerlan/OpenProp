@@ -6,5 +6,8 @@
 
 class ImpulseCalculator:
 
-  def __init__():
-    self.gravity = 9.80665
+  def __init__(desiredApogee):
+    self.GRAVITY = 9.80665
+    self.APOGEE = desiredApogee
+    self.AIR_DENSITY = 1.225
+
