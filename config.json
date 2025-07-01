@@ -1,0 +1,37 @@
+{
+    "Propellant" : {
+        "name" : "Purple Lightning",
+        "density" : 0.623,
+        "tabs" : [ 
+            {
+                "maxPressure" : 10000,
+                "minPressure" : 0,
+                "a": 0.005,
+                "n": 0.1,
+                "k" : 1,
+                "t" : 2130,
+                "m" : 1
+            }
+        ]
+    },
+
+    "Grains" : [ 
+        {
+            "type" : "BATES",
+            "core_diameter" : 3,
+            "diameter" : 6,
+            "length" : 6,
+            "inhibited_ends" : "Bottom"
+        }
+    ],
+
+
+    "Initial" : {
+        "Step_size" : 0.01,
+        "temp_initial" : 300,
+        "throat_dia_min": 1,
+        "throat_len_max" : 1,
+        "exit_half_angle_min": 13,
+        "exit_half_angle_max": 18
+    }
+}
