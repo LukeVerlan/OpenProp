@@ -1,1 +1,3 @@
-Changes to this file
+import math
+
+print(dir(math))

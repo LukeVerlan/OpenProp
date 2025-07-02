@@ -18,20 +18,33 @@
     "Grains" : [ 
         {
             "type" : "BATES",
-            "core_diameter" : 3,
-            "diameter" : 6,
-            "length" : 6,
-            "inhibited_ends" : "Bottom"
+            "coreDiameter" : 0.0762,
+            "diameter" : 0.1524,
+            "length" : 1.2192,
+            "inhibitedEnds" : "Top"
         }
     ],
 
 
     "Initial" : {
-        "Step_size" : 0.01,
+        "Step_size" : 0.001,
         "temp_initial" : 300,
-        "throat_dia_min": 1,
-        "throat_len_max" : 1,
-        "exit_half_angle_min": 13,
-        "exit_half_angle_max": 18
+        "sealvl_press" : 101325
+        
+    },
+
+    "Nozzle" : {
+        "throat_dia_min": 0.0254,
+        "throat_dia_max": 0.1,
+        "throat_len_max" : 3,
+        "throat_len_min" : 0,
+        "exitHalf" : 15,
+        "SlagCoef" : 0,
+        "ErosionCoef" : 0,
+        "Efficiency" : 0.98,
+        "nozzleDia" : 0.1524,
+        "nozzleLength" : 0.1524,
+        "minConverganceHalfAngle" : 60,
+        "maxConverganceHalfAngle" : 75
     }
 }
