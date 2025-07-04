@@ -1,5 +1,7 @@
 # NOZZLE ITERATOR
 # This is a nozzle iteration tool to solve for an ideal nozzle for a desired grain geometry 
+# A config is needed to use this tool, see config.json as an example config already setup with
+# the defualt settings that openMotor uses. 
 
 # Open Motor Classes
 from motorlib.propellant import Propellant
@@ -28,6 +30,8 @@ def main():
   (simRes, nozzle) = bestConfiguration
   iterationResult(simRes, nozzle)
 
+# Brief - Parse the configuration files
+# Parameters - config file 
 def setupProp(propConfig):
     prop = Propellant(propConfig["Propellant"])
     localGrains = []
@@ -55,7 +59,10 @@ def setupProp(propConfig):
     motor.propellant = prop
     motor.grains = localGrains
 
-
+# Breif - Performs the iterative solving of the nozzle
+# param nozzleConfig - configuration dictionary of the nozzle
+# param simluationConfig - configuration dictionary of the simluation
+# return - tuple with the best nozzle and motor sim respectively 
 def iteration(nozzleConfig, simulationConfig):
 
   # Store config files in dict
@@ -79,7 +86,7 @@ def iteration(nozzleConfig, simulationConfig):
   currBest = None
   bestNozzle = None
 
-  count = 0
+  # count = 0
   while throat <= nozzleConfig["maxDia"]:
     if currBest is None:
       print('iterating')
@@ -94,10 +101,11 @@ def iteration(nozzleConfig, simulationConfig):
       
       convHalf = nozzle["convAngle"]
       if convHalf <= nozzleConfig["maxHalfConv"] and convHalf >= nozzleConfig["minHalfConv"]:
-        count += 1
-        if count == 2:
-          printNozzleStatistics(nozzle)
-          count = 0
+
+        # count += 1
+        # if count == 2:
+        #   printNozzleStatistics(nozzle)
+        #   count = 0
 
         # Simulation setup 
         currNozz = Nozzle()
@@ -120,6 +128,14 @@ def iteration(nozzleConfig, simulationConfig):
 
   return (currBest, bestNozzle)
 
+# Brief - Calculates the convergence half angle of a nozzle given other dimensions
+# param dia - overall diameter of the nozzle
+# param len - overall length of the nozzle
+# param throatDia - diameter of the throat
+# param throatLen - length of the throat
+# param exitHalf - exit half angle
+# param exitDia - exit diameter
+# return - the convergence half angle
 def calcConvergenceHalfAngle(dia, len, throatDia, throatLen, exitHalf, exitDia):
 
   # Establish Radii 
@@ -138,6 +154,8 @@ def calcConvergenceHalfAngle(dia, len, throatDia, throatLen, exitHalf, exitDia):
   # Solve Convergence half angle
   return math.degrees(math.atan((r_total-r_throat)/lenConv))
 
+# Brief - print out the statistics of the given nozzle
+# param nozzle - nozzle dictionary 
 def printNozzleStatistics(nozzle):
   print(f"\nNozzle Dimensions\n"
         f"  Angles\n"
@@ -150,6 +168,9 @@ def printNozzleStatistics(nozzle):
         f" \n"
         f" Expansion ratio: {format(getExpansionRatio(nozzle['throat'],nozzle['exit']),".2f")}\n")
 
+# Brief - print out and format the results of the motor test
+# param simRes - simulation result
+# param nozzle - winning nozzle 
 def iterationResult(simRes, nozzle):
 
   # Print out the nozzle statistics
@@ -162,7 +183,10 @@ def iterationResult(simRes, nozzle):
   print(ui.peakValues())
   ui.plotThrustCurve()
   
-
+# Brief - calculate the expansion ratio of the given nozzle
+# param throatDia - diameter of the nozzle throat
+# pararm exitDia - exit diameter of the nozzle
+# return - the given nozzles expansion ratio
 def getExpansionRatio(throatDia, exitDia):
   return (math.pow(exitDia,2))/(math.pow(throatDia,2))
 
