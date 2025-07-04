@@ -49,18 +49,18 @@
 
         "SimulationParameters" : {
             "maxPressure" : 10000000,
-            "maxMassFlux" : 20000,
+            "maxMassFlux" : 1406,
             "maxMachNumber" : 0.8,
-            "minPortThroat" : 1.5,
+            "minPortThroat" : 2,
             "flowSeparationWarnPercent" : 0.15
         },
 
         "SimulationBehavior" : {
-            "burnoutWebThres" : 0.01,
-            "burnoutThrustThres" : 0.01,
-            "timestep" : 0.1,
+            "burnoutWebThres" : 0.000025,
+            "burnoutThrustThres" : 0.001,
+            "timestep" : 0.03,
             "ambPressure" : 101325,
-            "mapDim" : 500,
+            "mapDim" : 750,
             "sepPressureRatio" : 0.3
         }
     }

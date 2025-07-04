@@ -95,7 +95,7 @@ def iteration(nozzleConfig, simulationConfig):
       convHalf = nozzle["convAngle"]
       if convHalf <= nozzleConfig["maxHalfConv"] and convHalf >= nozzleConfig["minHalfConv"]:
         count += 1
-        if count == 100:
+        if count == 2:
           printNozzleStatistics(nozzle)
           count = 0
 
@@ -114,7 +114,7 @@ def iteration(nozzleConfig, simulationConfig):
           currBest = simRes
           bestNozzle = copy.deepcopy(nozzle)
 
-      throatLength += stepSize * 0.1
+      throatLength += stepSize * 0.5
     throatLength = nozzleConfig['minLen']
     throat += stepSize 
 
@@ -142,11 +142,11 @@ def printNozzleStatistics(nozzle):
   print(f"\nNozzle Dimensions\n"
         f"  Angles\n"
         f"    Exit Half Angle: {format(nozzle['divAngle'],".2f")} deg\n"
-        f"    Convergence Half Angle : {format(nozzle['convAngle'],".2f")} deg\n"
+        f"    Convergence Half Angle : {format(nozzle['convAngle'],".4f")} deg\n"
         f"\n"
         f"  Throat\n"
-        f"    Diameter: {format(nozzle['throat'] * 100,".2f")} cm\n"
-        f"    Length: {format((nozzle['throatLength'] * 100),".2f")} cm\n"
+        f"    Diameter: {format(nozzle['throat'] * 100,".4f")} cm\n"
+        f"    Length: {format((nozzle['throatLength'] * 100),".4f")} cm\n"
         f" \n"
         f" Expansion ratio: {format(getExpansionRatio(nozzle['throat'],nozzle['exit']),".2f")}\n")
 
