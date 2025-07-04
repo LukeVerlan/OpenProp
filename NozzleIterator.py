@@ -1,13 +1,20 @@
 # NOZZLE ITERATOR
 # This is a nozzle iteration tool to solve for an ideal nozzle for a desired grain geometry 
 
-import motorlib as ml
+# Open Motor Classes
 from motorlib.propellant import Propellant
 from motorlib.grains.bates import BatesGrain
-from motorlib.nozzle import Nozzle 
+from motorlib.nozzle import Nozzle
+from motorlib.motor import Motor
 
+# Python libraries
 import json
 import math
+import copy
+
+# Custom Classes
+from ConfigWrapper import ConfigWrapper
+from SimulationUI import SimulationUI
 
 def main():
 
@@ -17,103 +24,148 @@ def main():
     propConfig = json.load(file)
   
   setupProp(propConfig)
-  iteration(propConfig["Nozzle"], propConfig["Initial"])
-
+  bestConfiguration = iteration(propConfig["Nozzle"], propConfig["Motor"])
+  (simRes, nozzle) = bestConfiguration
+  iterationResult(simRes, nozzle)
 
 def setupProp(propConfig):
-  global prop
-  prop = Propellant(propConfig["Propellant"])
+    prop = Propellant(propConfig["Propellant"])
+    localGrains = []
 
-  global grains
-  grains = []
+    for grain_cfg in propConfig["Grains"]:
+        grain_type = grain_cfg["type"]
+        if grain_type == "BATES":
+            grain = BatesGrain()
+            grain.props['coreDiameter'].setValue(grain_cfg['coreDiameter'])
+            grain.props['inhibitedEnds'].setValue(grain_cfg['inhibitedEnds'])
 
-  for grain_cfg in propConfig["Grains"]:
-    grain_type = grain_cfg["type"]
+        grain.props['diameter'].setValue(grain_cfg['diameter'])
+        grain.props['length'].setValue(grain_cfg['length'])
+        localGrains.append(grain)
 
-    if grain_type == "BATES":
-      grain = BatesGrain()
-      grain.props['diameter'].setValue(grain_cfg['diameter'])
-      grain.props['length'].setValue(grain_cfg['length'])
-      grain.props['coreDiameter'].setValue(grain_cfg['coreDiameter'])
-      grain.props['inhibitedEnds'].setValue(grain_cfg['inhibitedEnds'])
-      grains.append(grain)
+    global motor
+    motor = Motor()
+    
+    # Combine simulation parameters and behavior dicts
+    combined_config = propConfig['Motor']["SimulationParameters"] | propConfig['Motor']["SimulationBehavior"]
+    
+    # Wrap combined_config in ConfigWrapper
+    motor.config = ConfigWrapper(combined_config)
+    
+    motor.propellant = prop
+    motor.grains = localGrains
+
 
 def iteration(nozzleConfig, simulationConfig):
-  
+
   # Store config files in dict
-  stepSize = simulationConfig["Step_size"]
-  tempInitial = simulationConfig["temp_initial"]
-  sealvlpress = simulationConfig["sealvl_press"]
+  stepSize = simulationConfig["Initial"]["iteration_step_size"]
 
-  # Parse nozzle data
-  bounds = setupNozzleDict(nozzleConfig)
-
-  # Known dimensions
-  dia = bounds["minDia"]
-  len = bounds["minLen"]
-  exitHalf = bounds["exitHalf"]
+  # Iterative class Dimenions
+  throat = nozzleConfig["minDia"]
+  throatLength = nozzleConfig["minLen"]
+  exitHalf = nozzleConfig["exitHalf"]
 
   nozzle = {}
 
-  # Iterative dimensions
-  nozzle["nozzleLengh"] = bounds["nozzleLength"]
-  nozzle["nozzleDia"] = bounds["nozzleDia"] 
+  # Known class Dimensions
+  nozzle['divAngle'] = nozzleConfig["exitHalf"]
+  nozzle['efficiency'] = nozzleConfig["Efficiency"]
+  nozzle['slagCoeff'] = nozzleConfig["SlagCoef"]
+  nozzle['erosionCoeff'] = nozzleConfig["ErosionCoef"]
+  nozzle['exit'] = nozzleConfig['exitDia']
 
-  nozzle["exitHalf"] = exitHalf
+  # Set comparison 
+  currBest = None
+  bestNozzle = None
 
-  while dia <= bounds["maxDia"]:
+  count = 0
+  while throat <= nozzleConfig["maxDia"]:
+    if currBest is None:
+      print('iterating')
 
-    nozzle["dia"] = dia
+    nozzle["throat"] = throat
 
-    while len <= bounds["maxLen"]:
+    while throatLength <= nozzleConfig["maxLen"]:
 
-      nozzle["len"] = len
-      nozzle["convHalf"] = calcConvergenceHalfAngle(nozzle["nozzleDia"], nozzle["nozzleLength"],
-                                                    dia, len, nozzle["exitHalf"])
+      nozzle["throatLength"] = throatLength
+      nozzle["convAngle"] = calcConvergenceHalfAngle(nozzleConfig["nozzleDia"], nozzleConfig["nozzleLength"],
+                                                    throat, throatLength, nozzle["divAngle"], nozzle["exit"])
       
-      convHalf = nozzle["convHalf"]
-      if convHalf <= bounds["maxHalfConv"] and convHalf >= bounds["minHalfConv"]:
-        
-        # Create nozzle 
+      convHalf = nozzle["convAngle"]
+      if convHalf <= nozzleConfig["maxHalfConv"] and convHalf >= nozzleConfig["minHalfConv"]:
+        count += 1
+        if count == 100:
+          printNozzleStatistics(nozzle)
+          count = 0
+
+        # Simulation setup 
+        currNozz = Nozzle()
+        for key, value in nozzle.items():
+          if key in currNozz.props:
+            currNozz.props[key].setValue(value)
+        motor.nozzle = currNozz
 
         # simluate
-
+        simRes = motor.runSimulation()
+       
         # compare to old best nozzle
+        if simRes.success and (currBest is None or simRes.getISP() > currBest.getISP()):
+          currBest = simRes
+          bestNozzle = copy.deepcopy(nozzle)
 
-        # rinse and repeat
+      throatLength += stepSize * 0.1
+    throatLength = nozzleConfig['minLen']
+    throat += stepSize 
 
-      len += stepSize
-    dia += stepSize
+  return (currBest, bestNozzle)
 
-def calcConvergenceHalfAngle(dia, len, throatDia, throatLen, exitHalf):
+def calcConvergenceHalfAngle(dia, len, throatDia, throatLen, exitHalf, exitDia):
 
-  thickness = (dia + throatDia)/2.0
-  lenDiverge = thickness/(math.tan(exitHalf))
-  lenConverge = len - throatLen - lenDiverge
-  return math.atan(thickness/lenConverge)
+  # Establish Radii 
+  r_throat = throatDia/2
+  r_exit = exitDia/2
+  r_total = dia/2
 
-def setupNozzleDict(nozzleConfig):
+  # Solve lengths
+  lenDiv = (1/math.tan(math.radians(exitHalf))) * (r_exit - r_throat)
+  lenConv = len - throatLen - lenDiv
 
-  bounds = {}
+  # Handle invalid geometry 
+  if lenConv <= 0:
+    return 999
 
-  bounds["minDia"] = nozzleConfig["throat_dia_min"]
-  bounds["maxDia"] = nozzleConfig["throat_dia_max"]
-  bounds["minLen"] = nozzleConfig["throat_len_min"]
-  bounds["maxLen"] = nozzleConfig["throat_len_max"]
-  bounds["minHalfConv"] = nozzleConfig["minConverganceHalfAngle"]
-  bounds["maxHalfConv"] = nozzleConfig["maxConverganceHalfAngle"]
-  bounds["exitHalf"] = nozzleConfig["exitHalf"]
-  bounds["nozzleLength"] = nozzleConfig["length"]
-  bounds["nozzleDia"] = nozzleConfig["dia"]
-  bounds["slagCoef"] = nozzleConfig["SlagCoef"]
-  bounds["erosionCoef"] = nozzleConfig["ErosionCoef"]
-  bounds["efficiency"] = nozzleConfig["Efficiency"]
+  # Solve Convergence half angle
+  return math.degrees(math.atan((r_total-r_throat)/lenConv))
 
-  return bounds
+def printNozzleStatistics(nozzle):
+  print(f"\nNozzle Dimensions\n"
+        f"  Angles\n"
+        f"    Exit Half Angle: {format(nozzle['divAngle'],".2f")} deg\n"
+        f"    Convergence Half Angle : {format(nozzle['convAngle'],".2f")} deg\n"
+        f"\n"
+        f"  Throat\n"
+        f"    Diameter: {format(nozzle['throat'] * 100,".2f")} cm\n"
+        f"    Length: {format((nozzle['throatLength'] * 100),".2f")} cm\n"
+        f" \n"
+        f" Expansion ratio: {format(getExpansionRatio(nozzle['throat'],nozzle['exit']),".2f")}\n")
 
+def iterationResult(simRes, nozzle):
+
+  # Print out the nozzle statistics
+  printNozzleStatistics(nozzle)
+  
+  # Create nice simulation tool
+  ui = SimulationUI(simRes)
+
+  # Print simluation peak values and plot thrust curve
+  print(ui.peakValues())
+  ui.plotThrustCurve()
+  
+
+def getExpansionRatio(throatDia, exitDia):
+  return (math.pow(exitDia,2))/(math.pow(throatDia,2))
 
 # This is the standard boilerplate that calls the main() function.
 if __name__ == '__main__':
   main()
-
-

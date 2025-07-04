@@ -1,16 +1,16 @@
 {
     "Propellant" : {
         "name" : "Purple Lightning",
-        "density" : 0.623,
+        "density" : 1666.32985,
         "tabs" : [ 
             {
-                "maxPressure" : 10000,
+                "maxPressure" : 68950000,
                 "minPressure" : 0,
-                "a": 0.005,
-                "n": 0.1,
-                "k" : 1,
-                "t" : 2130,
-                "m" : 1
+                "a": 0.000060,
+                "n": 0.289,
+                "k" : 1.2384,
+                "t" : 2185,
+                "m" : 23.55
             }
         ]
     },
@@ -18,33 +18,50 @@
     "Grains" : [ 
         {
             "type" : "BATES",
-            "coreDiameter" : 0.0762,
-            "diameter" : 0.1524,
+            "coreDiameter" : 0.0508,
+            "diameter" : 0.1397,
             "length" : 1.2192,
-            "inhibitedEnds" : "Top"
-        }
+            "inhibitedEnds" : "Neither"
+        }       
     ],
 
-
-    "Initial" : {
-        "Step_size" : 0.001,
-        "temp_initial" : 300,
-        "sealvl_press" : 101325
-        
+    "Nozzle": {
+        "minDia": 0.03175,           
+        "maxDia": 0.0762,          
+        "minLen": 0.010668,        
+        "maxLen": 0.0508,          
+        "exitHalf": 15,
+        "exitDia": 0.11684,         
+        "SlagCoef": 0,
+        "ErosionCoef": 0,
+        "Efficiency": 0.98,
+        "nozzleDia": 0.130048,      
+        "nozzleLength": 0.189484, 
+        "minHalfConv": 45,            
+        "maxHalfConv": 75
     },
 
-    "Nozzle" : {
-        "throat_dia_min": 0.0254,
-        "throat_dia_max": 0.1,
-        "throat_len_max" : 3,
-        "throat_len_min" : 0,
-        "exitHalf" : 15,
-        "SlagCoef" : 0,
-        "ErosionCoef" : 0,
-        "Efficiency" : 0.98,
-        "nozzleDia" : 0.1524,
-        "nozzleLength" : 0.1524,
-        "minConverganceHalfAngle" : 60,
-        "maxConverganceHalfAngle" : 75
+    "Motor" : {
+
+        "Initial" : {
+            "iteration_step_size" : 0.01
+        },
+
+        "SimulationParameters" : {
+            "maxPressure" : 10000000,
+            "maxMassFlux" : 20000,
+            "maxMachNumber" : 0.8,
+            "minPortThroat" : 1.5,
+            "flowSeparationWarnPercent" : 0.15
+        },
+
+        "SimulationBehavior" : {
+            "burnoutWebThres" : 0.01,
+            "burnoutThrustThres" : 0.01,
+            "timestep" : 0.1,
+            "ambPressure" : 101325,
+            "mapDim" : 500,
+            "sepPressureRatio" : 0.3
+        }
     }
 }

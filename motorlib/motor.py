@@ -359,3 +359,14 @@ class Motor():
         results['length'] = simRes.getPropellantLength()
 
         return results
+    
+    def __str__(self):
+        propellant_str = str(self.propellant) if self.propellant else "None"
+        grains_str = f"{len(self.grains)} grains"
+        return (f"Motor(\n"
+                f"  Nozzle: {self.nozzle}\n"
+                f"  Propellant: {propellant_str}\n"
+                f"  Grains: {grains_str}\n"
+                f"  Config: {self.config}\n"
+                f")")
+
