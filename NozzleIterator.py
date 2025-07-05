@@ -1,7 +1,8 @@
 # NOZZLE ITERATOR
 # This is a nozzle iteration tool to solve for an ideal nozzle for a desired grain geometry 
 # A config is needed to use this tool, see config.json as an example config already setup with
-# the defualt settings that openMotor uses. 
+# the defualt settings that openMotor uses. Currently compares the ISP between each nozzle.
+# Looking to make the criteria more customizable 
 
 # Open Motor Classes
 from motorlib.propellant import Propellant
@@ -35,6 +36,7 @@ def main():
 # Parameters - config file 
 def setupProp(propConfig):
     prop = Propellant(propConfig["Propellant"])
+
     localGrains = []
 
     for grain_cfg in propConfig["Grains"]:
@@ -72,7 +74,6 @@ def iteration(nozzleConfig, simulationConfig):
   # Iterative class Dimenions
   throat = nozzleConfig["minDia"]
   throatLength = nozzleConfig["minLen"]
-  exitHalf = nozzleConfig["exitHalf"]
 
   nozzle = {}
 
@@ -84,13 +85,13 @@ def iteration(nozzleConfig, simulationConfig):
   nozzle['exit'] = nozzleConfig['exitDia']
 
   # Set comparison 
-  currBest = None
+  bestSim = None
   bestNozzle = None
 
+  # Timer
   start_time = time.perf_counter()
+
   while throat <= nozzleConfig["maxDia"]:
-    if currBest is None:
-      print('iterating')
 
     nozzle["throat"] = throat
 
@@ -103,34 +104,33 @@ def iteration(nozzleConfig, simulationConfig):
       convHalf = nozzle["convAngle"]
       if convHalf <= nozzleConfig["maxHalfConv"] and convHalf >= nozzleConfig["minHalfConv"]:
 
-        # count += 1
-        # if count == 2:
-        #   printNozzleStatistics(nozzle)
-        #   count = 0
-
         # Simulation setup 
         currNozz = Nozzle()
+
         for key, value in nozzle.items():
           if key in currNozz.props:
             currNozz.props[key].setValue(value)
+
         motor.nozzle = currNozz
 
         # simluate
         simRes = motor.runSimulation()
        
         # compare to old best nozzle
-        if simRes.success and (currBest is None or simRes.getISP() > currBest.getISP()):
-          currBest = simRes
+        if simRes.success and (bestSim is None or simRes.getISP() > bestSim.getISP()):
+          bestSim = simRes
           bestNozzle = copy.deepcopy(nozzle)
 
       throatLength += stepSize
+
     throatLength = nozzleConfig['minLen']
-    throat += stepSize * 5
+    throat += stepSize
 
   end_time = time.perf_counter()
   elapsed_time = end_time - start_time
   print(f"Code executed in: {elapsed_time:.4f} seconds")
-  return (currBest, bestNozzle)
+
+  return (bestSim, bestNozzle)
 
 # Brief - Calculates the convergence half angle of a nozzle given other dimensions
 # param dia - overall diameter of the nozzle
@@ -185,7 +185,7 @@ def iterationResult(simRes, nozzle):
 
   # Print simluation peak values and plot thrust curve
   print(ui.peakValues())
-  ui.exportThrustCurve()
+  ui.exportThrustCurve("TestCSV.csv")
   ui.plotThrustCurve()
   
   

@@ -46,7 +46,9 @@ class SimulationUI:
             f"  Total Delievered Impulse: {self.simResult.getImpulse()}\n"
             f"  Average Thrust: {self.simResult.getAverageForce()}\n")
   
-  def exportThrustCurve(self, filename="testCSV.csv"):
+  # Brief - breaks down thrust curve and exports it as a CSV
+  # param filename - Name of the csv file, must end in csv
+  def exportThrustCurve(self, filename):
       with open(filename, mode='w', newline='') as file:
           writer = csv.writer(file)
           writer.writerow(["Time (s)", "Thrust (N)"])
