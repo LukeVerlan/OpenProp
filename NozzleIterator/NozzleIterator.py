@@ -4,6 +4,14 @@
 # the defualt settings that openMotor uses. Currently compares the ISP between each nozzle.
 # Looking to make the criteria more customizable 
 
+import sys
+import os
+
+# This basically says look at the file path above me, and pull my imports from there 
+repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+if repo_root not in sys.path:
+    sys.path.insert(0, repo_root)
+
 # Open Motor Classes
 from motorlib.propellant import Propellant
 from motorlib.grains.bates import BatesGrain
@@ -17,8 +25,8 @@ import copy
 import time
 
 # Custom Classes
-from ConfigWrapper import ConfigWrapper
-from SimulationUI import SimulationUI
+from NozzleIterator.ConfigWrapper import ConfigWrapper
+from NozzleIterator.SimulationUI import SimulationUI
 
 def main():
 
@@ -199,3 +207,4 @@ def getExpansionRatio(throatDia, exitDia):
 # This is the standard boilerplate that calls the main() function.
 if __name__ == '__main__':
   main()
+ 
