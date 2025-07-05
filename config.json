@@ -20,16 +20,32 @@
             "type" : "BATES",
             "coreDiameter" : 0.0508,
             "diameter" : 0.1397,
-            "length" : 1.2192,
+            "length" : 0.4064,
             "inhibitedEnds" : "Neither"
-        }       
+        },     
+        
+        {
+            "type" : "BATES",
+            "coreDiameter" : 0.0508,
+            "diameter" : 0.1397,
+            "length" : 0.4064,
+            "inhibitedEnds" : "Neither"
+        },  
+
+        {
+            "type" : "BATES",
+            "coreDiameter" : 0.0508,
+            "diameter" : 0.1397,
+            "length" : 0.4064,
+            "inhibitedEnds" : "Neither"
+        }   
     ],
 
     "Nozzle": {
-        "minDia": 0.03175,           
-        "maxDia": 0.0762,          
-        "minLen": 0.010668,        
-        "maxLen": 0.0508,          
+        "minDia": 0.02,           
+        "maxDia": 0.09,          
+        "minLen": 0.009,        
+        "maxLen": 0.06,          
         "exitHalf": 15,
         "exitDia": 0.11684,         
         "SlagCoef": 0,
@@ -44,7 +60,7 @@
     "Motor" : {
 
         "Initial" : {
-            "iteration_step_size" : 0.01
+            "iteration_step_size" : 0.001
         },
 
         "SimulationParameters" : {

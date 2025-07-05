@@ -13,6 +13,7 @@ from motorlib.motor import Motor
 import json
 import math
 import copy
+import time
 
 # Custom Classes
 from ConfigWrapper import ConfigWrapper
@@ -86,7 +87,7 @@ def iteration(nozzleConfig, simulationConfig):
   currBest = None
   bestNozzle = None
 
-  # count = 0
+  start_time = time.perf_counter()
   while throat <= nozzleConfig["maxDia"]:
     if currBest is None:
       print('iterating')
@@ -122,10 +123,13 @@ def iteration(nozzleConfig, simulationConfig):
           currBest = simRes
           bestNozzle = copy.deepcopy(nozzle)
 
-      throatLength += stepSize * 0.5
+      throatLength += stepSize
     throatLength = nozzleConfig['minLen']
-    throat += stepSize 
+    throat += stepSize * 5
 
+  end_time = time.perf_counter()
+  elapsed_time = end_time - start_time
+  print(f"Code executed in: {elapsed_time:.4f} seconds")
   return (currBest, bestNozzle)
 
 # Brief - Calculates the convergence half angle of a nozzle given other dimensions
@@ -181,7 +185,9 @@ def iterationResult(simRes, nozzle):
 
   # Print simluation peak values and plot thrust curve
   print(ui.peakValues())
+  ui.exportThrustCurve()
   ui.plotThrustCurve()
+  
   
 # Brief - calculate the expansion ratio of the given nozzle
 # param throatDia - diameter of the nozzle throat

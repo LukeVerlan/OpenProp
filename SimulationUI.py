@@ -1,6 +1,9 @@
 # SIMULATION UI
 #
 # This class is used to save simulation results and present the Data clealy. 
+
+import csv 
+
 class SimulationUI:
 
   # Breif - Constructor
@@ -43,6 +46,13 @@ class SimulationUI:
             f"  Total Delievered Impulse: {self.simResult.getImpulse()}\n"
             f"  Average Thrust: {self.simResult.getAverageForce()}\n")
   
+  def exportThrustCurve(self, filename="testCSV.csv"):
+      with open(filename, mode='w', newline='') as file:
+          writer = csv.writer(file)
+          writer.writerow(["Time (s)", "Thrust (N)"])
+          for t, f in zip(self.simResult.channels['time'].getData(), self.simResult.channels['force'].getData()):
+              writer.writerow([t, f])
+    
 
           
   
