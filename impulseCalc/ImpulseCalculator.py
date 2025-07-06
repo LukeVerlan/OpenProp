@@ -18,44 +18,62 @@ class ImpulseCalculator:
         ##### needs to dynamcally set propellant mass and dry mass according to avg thrust and burn time 
 
         apogee = 0.0
-        while apogee <= (1 + parameters.apogeeThreshold) * parameters.desiredApogee:
+        currentDeltaT = parameters.deltaT # adjust deltaT to get accurate apogees faster
+        while apogee <= (1 + parameters.apogeeThreshold) * parameters.desiredApogee: # this condition does nothing, idk what to change it to
 
-            burnTime += parameters.burnTimeStep  # want to set this to an input variable later
-            print("increasing burn time to: " + str(burnTime))
+            burnTime += parameters.burnTimeStep  # iterates through burnTimes with chosen precision
+            #print("increasing burn time to: " + str(burnTime))
 
-            lowBound = parameters.dryMass * constants.standardGravity * parameters.minAvgTtW
-            try: 
-                highBound = statistics.median(set([row[0] for row in passingThrustBurntimeApogeeSet])) 
-            except statistics.StatisticsError:  # if the set is empty, set highBound to a default value
-                highBound = parameters.dryMass * constants.standardGravity * 10**5 # default value if no successful runs yet
+            try: # sets upper bound to the last/smallest thrust that has passed. always works since burn time up --> next thrust must be lower
+                lowBound = min((set([row[0] for row in passingThrustBurntimeApogeeSet])))/3
+            except ValueError:  # if the set is empty, set to minTtW value
+                lowBound = SimulationTools.getWetMass(avgThrust, burnTime) * constants.standardGravity * parameters.minAvgTtW # default big value if no successful runs yet
 
+            try: # sets upper bound to the last/smallest thrust that has passed. always works since burn time up --> next thrust must be lower
+                highBound = min((set([row[0] for row in passingThrustBurntimeApogeeSet])))
+            except ValueError:  # if the set is empty, set highBound to a default value
+                highBound = SimulationTools.getWetMass(avgThrust, burnTime) * constants.standardGravity * 10**4 # default big value if no successful runs yet
 
-            if abs((highBound - lowBound))/ lowBound < 0.01:  # if the bounds are too close together, break the loop
-                print("Bounds too close together, breaking loop")
+            if avgThrust < SimulationTools.getWetMass(avgThrust, burnTime) * constants.standardGravity * parameters.minAvgTtW and not len(passingThrustBurntimeApogeeSet) == 0 :
                 break
+            # if abs((highBound - lowBound))/ lowBound < parameters.bisectionBoundPercDiff:  # if the bounds are too close together, break the loop
+            #     print("Bounds too close together, breaking loop")
+            #     break
 
-
+            count = 0
+            print("Starting new iteration with burn time = " + str(burnTime))
             while apogee <= (1 + parameters.apogeeThreshold) * parameters.desiredApogee or apogee >= (1 - parameters.apogeeThreshold) * parameters.desiredApogee:  # loop until the apogee is within 5% of the desired apogee
                 avgThrust = (lowBound + highBound)/2  # set the average thrust to the midpoint of the bounds
-                apogee = simulation.runsimulation(parameters.deltaT, burnTime, avgThrust)
+                #print("running sim with deltaT " +str(currentDeltaT))
+                apogee = simulation.runsimulation(currentDeltaT, burnTime, avgThrust) # runs the sim!!!!! with the currents values!!
+                print(str(count) + ". apogee: " + str(apogee) + ", avgThrust: " + str(avgThrust))
+                count += 1
+                currentDeltaT = .6 * currentDeltaT #cuts deltaT down every single run and adjusts deltaT smoothly to avoid sudden changes in apo due to euler stepper quirks. important for accurate results
 
                 if apogee >= (1 + parameters.apogeeThreshold) * parameters.desiredApogee:
                     highBound = avgThrust  # if the apogee is too high, set the high bound to the current average thrust
-                    print("apogee too high, setting high bound to: " + str(highBound))
-                    if abs((highBound - lowBound))/ lowBound < 0.01:  # if the bounds are too close together, break the loop
+                    #print("apogee too high, setting high bound to: " + str(highBound))
+                    if abs((highBound - lowBound))/ lowBound < parameters.bisectionBoundPercDiff:  # if the bounds are too close together, break the loop
                         print("Bounds too close together, breaking loop")
+                        currentDeltaT = parameters.deltaT
+                        #print("reset deltaT" + str(currentDeltaT))
                         break
                 elif apogee <= (1 - parameters.apogeeThreshold) * parameters.desiredApogee: 
                     lowBound = avgThrust  # if the apogee is too low, set the low bound to the current average thrust
-                    print("apogee too low, setting low bound to: " + str(lowBound))
-                    if abs((highBound - lowBound))/ lowBound < 0.01:  # if the bounds are too close together, break the loop
+                    #print("apogee too low, setting low bound to: " + str(lowBound))
+                    if abs((highBound - lowBound))/ lowBound < parameters.bisectionBoundPercDiff:  # if the bounds are too close together, break the loop
                         print("Bounds too close together, breaking loop")
+                        currentDeltaT = parameters.deltaT
+                        #print("reset deltaT" + str(currentDeltaT))
                         break
                 else: 
                     passingThrustBurntimeApogeeSet.append((avgThrust, burnTime, apogee))  # store successful runs
+                    #print("delta T for successful sim " + str(currentDeltaT))
                     print("logged successful run with avgThrust: " + str(avgThrust) + " burnTime: " + str(burnTime) + " apogee: " + str(apogee))
+                    currentDeltaT = parameters.deltaT
+                    #print("reset deltaT " + str(currentDeltaT))
                     break
-
+                
         passingThrustBurntimeApogeeSet.sort()  # Sort by thrust for data organization
 
         second_column_values = [row[1] for row in passingThrustBurntimeApogeeSet] # Extract the second column (burn time) values for filtering
@@ -75,7 +93,7 @@ class ImpulseCalculator:
             impulse = thrust * burn_time 
             passingImpulses.append(impulse) # fill the list using the table of passing thrust, burn time, and apogees
 
-        return min(passingImpulses), passingImpulses[round(.25*len(passingImpulses))], passingImpulses[round(.5*len(passingImpulses))], passingImpulses[round(.75*len(passingImpulses))], max(passingImpulses), len(passingImpulses), np.mean(passingImpulses), passingThrustBurntimeApogeeSet  
+        return min(passingImpulses), passingImpulses[round(.25*len(passingImpulses))-1], passingImpulses[round(.5*len(passingImpulses))-1], passingImpulses[round(.75*len(passingImpulses))-1], max(passingImpulses), len(passingImpulses), np.mean(passingImpulses), passingThrustBurntimeApogeeSet  
     #return the minimum, 25th, 50th, 75th, and maximum impulse values calculated from the successful runs, the total number of impulses calculated, the mean impulse value, and the passing thrust, burn time, and apogee sets
                 
     def __init__(self, simulation_obj): # Add this constructor
@@ -83,10 +101,11 @@ class ImpulseCalculator:
 
 
 if __name__ == "__main__":
-    elevationProps = elevationDepProperties(constants) 
-    simulation = SimulationTools(constants, parameters, elevationProps)
+    elevationProps = elevationDepProperties(constants)  #create the elevationProps object
+    simulation = SimulationTools(constants, parameters, elevationProps)  #create the simulation object
     calculator = ImpulseCalculator(simulation) # Pass the simulation object here
-    possibleImpulseInfo = calculator.calculate_Impulse_needed()
+    possibleImpulseInfo = calculator.calculate_Impulse_needed() # run the impulse calc
+    #print(simulation.runsimulation(0.002, 4.0, 2500.0))
     #actually runs the impulse calculator and returns the possible impulse information
 
     #prints all of the information input by the user
@@ -97,7 +116,7 @@ if __name__ == "__main__":
     print(f"Drag area: {parameters.dragArea:.4f} m^2")
     print(f"Drag coefficient: {parameters.dragCoefficient:.2f}")
     print(f"Wind velocity: {parameters.windVelocity:.2f} m/s")
-    print(f"Dry mass: {parameters.dryMass:.2f} kg") # remember this is funky wunky and will need to not be a constant 
+    print(f"Dry mass: {parameters.noMotorMass:.2f} kg")
     print(f"Surface pressure: {parameters.surfacePressure:.2f} Pa")
     print(f"Surface temperature: {parameters.surfaceTemperature:.2f} K")
     print(f"Delta T: {parameters.deltaT:.2f} s")
@@ -118,7 +137,7 @@ if __name__ == "__main__":
     count = 0
     for thrust, burn_time, apogee in possibleImpulseInfo[7]: #prints every nth thrust, burn time, and apogee set
         count += 1
-        if count % 1 == 0:
+        if count % (round(len(possibleImpulseInfo)/6)) == 0:   #prints a sample of all passing triplets, i dont remember why its not just count % 3
             print(f"Thrust: {thrust:.2f} N, Burn time: {burn_time:.2f} s, Apogee: {apogee:.2f} m")
 
     

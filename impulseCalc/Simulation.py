@@ -1,78 +1,120 @@
 import math
-from elevationProperties import elevationDepProperties
+import parameters
 
 class SimulationTools:
 
-    def __init__(self, constants, parameters, elevationProperties_arg): # Rename argument for clarity
-        self.elevationProperties = elevationProperties_arg # Use the passed instance
+    def __init__(self, constants, parameters, elevationProperties_arg): 
+        self.elevationProperties = elevationProperties_arg
         self.constants = constants
         self.parameters = parameters
 
 
-    def runsimulation(self, deltaT, burnTime, avgThrust): # Removed parameters and elevationProperties args, using self.
-        # This function runs the simulation to calculate the apogee altitude
+    def getWetMass(avgThrust, burnTime):
+            wetMass = parameters.noMotorMass + (1.6 * ((avgThrust * burnTime) / parameters.specificImpulse) + .354)  # found a regression relationship between prop mass and motor mass
+            return wetMass
+
+    def runsimulation(self, deltaT, burnTime, avgThrust):
+        
         xPosition = 0.0
-        yPosition = 0.0 # This is altitude *above the launch site*
+        yPosition = 0.0 # This is altitude above the launch site
         xVelocity = 0.0
         yVelocity = 0.0
-        xAcceleration = 0.0
-        yAcceleration = 0.0
         time = 0.0
+        propelantMass = (avgThrust * burnTime) / parameters.specificImpulse
+        dryMass = parameters.noMotorMass + (1.6 * propelantMass + .354) - propelantMass
+        #print("prop mass = " + str(propelantMass))
+        #print("total motor mass  = " + str(1.6 * propelantMass + .354))
+        #print("dry mass = " + str(dryMass))
 
-        # Helper function for propellant mass within the runsimulation scope
+        # Helper functions for propellant mass and thrust within the runsimulation scope
         def calculate_propellant_mass(current_time):
             if current_time < burnTime:
-                # Assuming parameters.propelantMass is the TOTAL propellant mass
-                return self.parameters.propelantMass * (1 - current_time / burnTime)
+                return propelantMass * (1 - current_time / burnTime)
             else:
                 return 0.0
 
-        # Helper function for thrust within the runsimulation scope
         def calculate_thrust(current_time):
             if current_time < burnTime:
                 return avgThrust
             else:
                 return 0.0
+            
+        
+        # RK-4 function for getting the derivatives
+        def get_derivatives(current_t, current_state):
+            x, y, vx, vy = current_state
 
-        while (yPosition == 0.0 or yVelocity >= 0.0) and time < 300: # yPosition can be slightly negative due to calculation quirks
+            # Calculate current properties based on time and altitude
+            current_propellant_mass = calculate_propellant_mass(current_t)
+            current_mass = dryMass + current_propellant_mass
 
-            # print("started sim")
-            # print("current vals: " + str(yPosition))
-            yPosition += yVelocity * deltaT # This is technically using the updated velocity for the whole deltaT
-            xPosition += xVelocity * deltaT # This is technically using the updated velocity for the whole deltaT
-            xVelocity += xAcceleration * deltaT 
-            yVelocity += yAcceleration * deltaT
+            current_air_density = self.elevationProperties.calculate_air_density(y, self.parameters.surfacePressure, self.parameters.surfaceTemperature, self.parameters.launchSiteElevation)
 
-            currentPropelantMass = calculate_propellant_mass(time) # Call the local helper
-            currentMass = self.parameters.dryMass + currentPropelantMass
-            currentAirDensity = self.elevationProperties.calculate_air_density(yPosition, self.parameters.surfacePressure, self.parameters.surfaceTemperature, self.parameters.launchSiteElevation)
-            currentWeightForce = self.elevationProperties.calculate_gravity_at_elevation(yPosition, self.parameters.launchSiteElevation, ) * currentMass
+            current_weight_force = self.elevationProperties.calculate_gravity_at_elevation(y, self.parameters.launchSiteElevation) * current_mass
+            current_thrust = calculate_thrust(current_t)
 
-            currentThrust = calculate_thrust(time) # Call the local helper
+            x_thrust = math.sin(parameters.railAngle) * current_thrust
+            y_thrust = math.cos(parameters.railAngle) * current_thrust
 
-            xThrust = math.sin(self.parameters.railAngle) * currentThrust
-            yThrust = math.cos(self.parameters.railAngle) * currentThrust
+            # Calculate drag forces
+            rel_velocity_x = vx - parameters.windVelocity
+            rel_velocity_y = vy
+            velocity_magnitude = math.sqrt(rel_velocity_x**2 + rel_velocity_y**2)
 
-            # Calculate drag and weight forces
-            relVelocityX = xVelocity - self.parameters.windVelocity
-            relVelocityY = yVelocity
-            velocityMagnitude = math.sqrt(relVelocityX**2 + relVelocityY**2)
-
-            phi = math.atan2(relVelocityX, relVelocityY) # Angle of the relative velocity vector
-
-            dragForce = 0.5 * currentAirDensity * (velocityMagnitude) ** 2 * self.parameters.dragCoefficient * self.parameters.dragArea
-            xDrag = dragForce * math.sin(phi)
-            yDrag = dragForce * math.cos(phi)
+            phi = math.atan2(rel_velocity_x, rel_velocity_y) # Angle of the relative velocity vector
+            drag_force = 0.5 * current_air_density * (velocity_magnitude)**2 * parameters.dragCoefficient * parameters.dragArea
+            x_drag = drag_force * math.sin(phi)
+            y_drag = drag_force * math.cos(phi)
 
             # Net force
-            netForceX = xThrust - xDrag
-            netForceY = yThrust - currentWeightForce - yDrag
+            net_force_x = x_thrust - x_drag
+            net_force_y = y_thrust - current_weight_force - y_drag
 
-            xAcceleration = netForceX / currentMass
-            yAcceleration = netForceY / currentMass
+            # Accelerations
+            ax = net_force_x / current_mass
+            ay = net_force_y / current_mass
+
+            # Return the derivatives: [vx, vy, ax, ay]
+            return [vx, vy, ax, ay]
+
+        # Store simulation data for tracking apogee
+        max_y_position = 0.0
+
+        # Main simulation loop
+        while (yPosition >= 0.0 and yVelocity >= 0.0) and time < 1000: 
+
+            #print("penis " + str(yPosition))
+            # Update max_y_position for apogee tracking
+            if yPosition > max_y_position:
+                max_y_position = yPosition
+            
+            # RK4 Integration Step
+            current_state = [xPosition, yPosition, xVelocity, yVelocity]
+
+            # k1: evaluate derivatives at the beginning of the interval
+            k1 = get_derivatives(time, current_state)
+            
+            # k2: evaluate derivatives at the midpoint using k1 estimate
+            state_k2 = [s + 0.5 * d * deltaT for s, d in zip(current_state, k1)]
+            k2 = get_derivatives(time + 0.5 * deltaT, state_k2)
+            
+            # k3: evaluate derivatives at the midpoint using k2 estimate
+            state_k3 = [s + 0.5 * d * deltaT for s, d in zip(current_state, k2)]
+            k3 = get_derivatives(time + 0.5 * deltaT, state_k3)
+            
+            # k4: evaluate derivatives at the end of the interval using k3 estimate
+            state_k4 = [s + d * deltaT for s, d in zip(current_state, k3)]
+            k4 = get_derivatives(time + deltaT, state_k4)
+
+            # Update state variables using the weighted average of the k values
+            xPosition += (k1[0] + 2*k2[0] + 2*k3[0] + k4[0]) / 6.0 * deltaT
+            yPosition += (k1[1] + 2*k2[1] + 2*k3[1] + k4[1]) / 6.0 * deltaT
+            xVelocity += (k1[2] + 2*k2[2] + 2*k3[2] + k4[2]) / 6.0 * deltaT
+            yVelocity += (k1[3] + 2*k2[3] + 2*k3[3] + k4[3]) / 6.0 * deltaT
 
             # Update time
             time += deltaT
 
-        return yPosition # Return the final altitude as apogee
+        return max_y_position
+
     
