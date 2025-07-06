@@ -30,6 +30,7 @@ import time
 from NozzleIterator.ConfigWrapper import ConfigWrapper
 from NozzleIterator.SimulationUI import SimulationUI
 
+# Brief - Parses the config given to the nozzle files and runs the simluation flow
 def main():
 
   # Parses command line arguments, nessecary for integrating with main
@@ -133,7 +134,7 @@ def iteration(nozzleConfig, simulationConfig):
         simRes = motor.runSimulation()
        
         # compare to old best nozzle
-        if simRes.success and (bestSim is None or simRes.getISP() > bestSim.getISP()):
+        if simRes.success and (bestSim is None or isPriority(nozzleConfig["preference"], simRes, bestSim)):
           bestSim = simRes
           bestNozzle = copy.deepcopy(nozzle)
 
@@ -211,6 +212,19 @@ def iterationResult(simRes, nozzle):
 # return - the given nozzles expansion ratio
 def getExpansionRatio(throatDia, exitDia):
   return (math.pow(exitDia,2))/(math.pow(throatDia,2))
+
+def isPriority(priority, simRes, bestSim):
+
+  if priority == "ISP":
+    return simRes.getISP() > bestSim.getISP()
+  elif priority == "ThrustCoef":
+    return simRes.getIdealThrustCoefficient() > bestSim.getIdealThrustCoefficient()
+  elif priority == "AvgThrust":
+    return simRes.getAverageForce() > bestSim.getAverageForce()
+  elif priority == "Impulse":
+    return simRes.getImpulse() > bestSim.getImpulse() 
+  elif priority == "burnTime":
+    return simRes.getBurnTime() > bestSim.getBurnTime()
 
 # This is the standard boilerplate that calls the main() function.
 if __name__ == '__main__':

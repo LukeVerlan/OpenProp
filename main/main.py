@@ -30,7 +30,7 @@ def main():
 
   # Functions
   functionsFrame = ttk.Frame(gui)
-  functionsFrame.grid(row=0, column=0, columnspan=1, sticky="nsew")
+  functionsFrame.grid(row=0, column=0,sticky="nsew")
 
   functionsFrame.rowconfigure([1, 2, 3, 4], weight=1)  # Allow buttons to expand vertically
   functionsFrame.columnconfigure(0, weight=1)         # Allow buttons to fill horizontally
@@ -38,16 +38,20 @@ def main():
   functionsLabel = tk.Label(functionsFrame, text="Functions")
   functionsLabel.grid(row=0, column=0, sticky="nsew")
 
-  nozzleBtn = ttk.Button(functionsFrame, text="Nozzle Iterator",command=runNozzleIterator)
+  nozzleBtn = ttk.Button(functionsFrame, text="Nozzle Iterator",
+                         command=runNozzleIterator)
   nozzleBtn.grid(row= 1, column=0, sticky="nsew")
 
-  impulseBtn = ttk.Button(functionsFrame, text="Impulse Calculator", command=runImpulseCalc)
+  impulseBtn = ttk.Button(functionsFrame, text="Impulse Calculator",
+                          command=runImpulseCalc)
   impulseBtn.grid(row=2, column=0, sticky="nsew")
 
-  curativeBtn = ttk.Button(functionsFrame, text="Curative Calculator",command=runCurativeCalculator)
+  curativeBtn = ttk.Button(functionsFrame, text="Curative Calculator",
+                          command=runCurativeCalculator)
   curativeBtn.grid(row=3, column=0, sticky="nsew")
 
-  seriesBtn = ttk.Button(functionsFrame, text="Nozzle Iterator & Impulse Calculator",command=runSeries)
+  seriesBtn = ttk.Button(functionsFrame, text="Nozzle Iterator & Impulse Calculator",
+                         command=runSeries)
   seriesBtn.grid(row=4,column=0, sticky="nsew")
 
   # Configurations 
@@ -60,16 +64,20 @@ def main():
   configsLabel = tk.Label(configsFrame, text="Config Creators")
   configsLabel.grid(row=0, column=0, sticky = "nsew")
 
-  nozzleConfigBtn = ttk.Button(configsFrame, text="Nozzle Iterator Config",command=createNIConfig)
+  nozzleConfigBtn = ttk.Button(configsFrame, text="Nozzle Iterator Config",
+                               command=lambda: createNIConfig(gui))
   nozzleConfigBtn.grid(row= 1, column=0, sticky="nsew")
 
-  impulseConfigBtn = ttk.Button(configsFrame, text="Impulse Calculator Config", command=createImpulseConfig)
+  impulseConfigBtn = ttk.Button(configsFrame, text="Impulse Calculator Config",
+                                command=lambda: createImpulseConfig(gui))
   impulseConfigBtn.grid(row=2, column=0, sticky="nsew")
 
-  curativeConfigBtn = ttk.Button(configsFrame, text="Curative Calculator Config",command=createCurativeConfig)
+  curativeConfigBtn = ttk.Button(configsFrame, text="Curative Calculator Config",
+                                 command=lambda: createCurativeConfig(gui))
   curativeConfigBtn.grid(row=3, column=0, sticky="nsew")
 
-  seriesConfigBtn = ttk.Button(configsFrame, text="Nozzle Iterator & Impulse Calculator Config",command=createSeriesConfig)
+  seriesConfigBtn = ttk.Button(configsFrame, text="Nozzle Iterator & Impulse Calculator Config",
+                               command=lambda: createSeriesConfig(gui))
   seriesConfigBtn.grid(row=4,column=0, sticky="nsew")
 
   gui.mainloop()
@@ -79,16 +87,22 @@ def runNozzleIterator():
   if config is not None:  
     sub.run([sys.executable, "NozzleIterator/NozzleIterator.py", config], check=True)
 
-def createNIConfig():
+def createNIConfig(gui):
+  popup = tk.Toplevel(gui)
+  popup.wait_window()
+  popup.title('Iterator Configuration Settings ')
+  
+  header = ttk.Label(popup, text="Configuration settings -- Units: Length - m, Angle - deg, " \
+                    "Pressure - Pa, Temperature - K, Density - kg/m^3")
+  header.grid(row=0, column=0, sticky ="ew")
+
+def createImpulseConfig(gui):
   pass
 
-def createImpulseConfig():
+def createCurativeConfig(gui):
   pass
 
-def createCurativeConfig():
-  pass
-
-def createSeriesConfig():
+def createSeriesConfig(gui):
   pass
   
 def runImpulseCalc():

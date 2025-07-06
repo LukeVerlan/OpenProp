@@ -46,7 +46,8 @@
         "nozzleDia": 0.130048,      
         "nozzleLength": 0.189484, 
         "minHalfConv": 45,            
-        "maxHalfConv": 75
+        "maxHalfConv": 75,
+        "preference" : "ISP"
     },
 
     "Motor" : {
