@@ -4,8 +4,10 @@
 # the defualt settings that openMotor uses. Currently compares the ISP between each nozzle.
 # Looking to make the criteria more customizable 
 
+# File handling libraries
 import sys
 import os
+import argparse
 
 # This basically says look at the file path above me, and pull my imports from there 
 repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
@@ -30,7 +32,11 @@ from NozzleIterator.SimulationUI import SimulationUI
 
 def main():
 
-  configFile = input('Upload propellant config: ')
+  # Parses command line arguments, nessecary for integrating with main
+  parser = argparse.ArgumentParser(description="Nozzle config parser") # create cmd parser 
+  parser.add_argument("config_path", help="Path to the config JSON file") # grab configfilepath
+  args = parser.parse_args() # Parse those arguments
+  configFile = args.config_path # give me the file at the end of that directory
 
   with open(configFile, 'r') as file:
     propConfig = json.load(file)
@@ -98,6 +104,8 @@ def iteration(nozzleConfig, simulationConfig):
 
   # Timer
   start_time = time.perf_counter()
+
+  print('Running Simulation!')
 
   while throat <= nozzleConfig["maxDia"]:
 

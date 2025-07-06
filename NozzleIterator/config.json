@@ -52,7 +52,7 @@
     "Motor" : {
 
         "Initial" : {
-            "iteration_step_size" : 0.001
+            "iteration_step_size" : 0.01
         },
 
         "SimulationParameters" : {
