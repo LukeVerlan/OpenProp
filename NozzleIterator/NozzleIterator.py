@@ -43,7 +43,7 @@ def main():
     propConfig = json.load(file)
   
   setupProp(propConfig)
-  bestConfiguration = iteration(propConfig["Nozzle"], propConfig["Motor"])
+  bestConfiguration = iteration(propConfig["Nozzle"])
   (simRes, nozzle) = bestConfiguration
   iterationResult(simRes, nozzle)
 
@@ -81,10 +81,10 @@ def setupProp(propConfig):
 # param nozzleConfig - configuration dictionary of the nozzle
 # param simluationConfig - configuration dictionary of the simluation
 # return - tuple with the best nozzle and motor sim respectively 
-def iteration(nozzleConfig, simulationConfig):
+def iteration(nozzleConfig):
 
   # Store config files in dict
-  stepSize = simulationConfig["Initial"]["iteration_step_size"]
+  stepSize = nozzleConfig["iteration_step_size"]
 
   # Iterative class Dimenions
   throat = nozzleConfig["minDia"]

@@ -47,14 +47,11 @@
         "nozzleLength": 0.189484, 
         "minHalfConv": 45,            
         "maxHalfConv": 75,
-        "preference" : "ISP"
+        "preference" : "ISP",
+        "iteration_step_size" : 0.01
     },
 
     "Motor" : {
-
-        "Initial" : {
-            "iteration_step_size" : 0.01
-        },
 
         "SimulationParameters" : {
             "maxPressure" : 10000000,
