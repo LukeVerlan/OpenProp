@@ -213,6 +213,10 @@ def iterationResult(simRes, nozzle):
 def getExpansionRatio(throatDia, exitDia):
   return (math.pow(exitDia,2))/(math.pow(throatDia,2))
 
+# Brief - Determines if the simluation should be prefered to the current best
+# param priority - criteria to base preference on
+# param simRes - similuation to compare to 
+# param bestSim - current best simulation
 def isPriority(priority, simRes, bestSim):
 
   if priority == "ISP":
@@ -225,6 +229,8 @@ def isPriority(priority, simRes, bestSim):
     return simRes.getImpulse() > bestSim.getImpulse() 
   elif priority == "burnTime":
     return simRes.getBurnTime() > bestSim.getBurnTime()
+  else: 
+    ValueError()
 
 # This is the standard boilerplate that calls the main() function.
 if __name__ == '__main__':

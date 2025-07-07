@@ -17,8 +17,15 @@ import tkinter as tk
 from tkinter import ttk 
 from tkinter import filedialog as fd 
 
+# Python libraries
+import re
+
 
 def main(): 
+
+  global configs
+
+  configs = {}
 
   # initialize main GUI page
   gui = tk.Tk()
@@ -40,7 +47,7 @@ def main():
 
   nozzleBtn = ttk.Button(functionsFrame, text="Nozzle Iterator",
                          command=runNozzleIterator)
-  nozzleBtn.grid(row= 1, column=0, sticky="nsew")
+  nozzleBtn.grid(row=1, column=0, sticky="nsew")
 
   impulseBtn = ttk.Button(functionsFrame, text="Impulse Calculator",
                           command=runImpulseCalc)
@@ -58,27 +65,15 @@ def main():
   configsFrame = tk.Frame(gui)
   configsFrame.grid(row=0,column=1,sticky="nsew")
 
-  configsFrame.rowconfigure([1, 2, 3, 4], weight=1)
+  configsFrame.rowconfigure([1, 2, 3, 4,5], weight=1)
   configsFrame.columnconfigure(0, weight=1)
 
-  configsLabel = tk.Label(configsFrame, text="Config Creators")
+  configsLabel = tk.Label(configsFrame, text="Settings")
   configsLabel.grid(row=0, column=0, sticky = "nsew")
 
-  nozzleConfigBtn = ttk.Button(configsFrame, text="Nozzle Iterator Config",
-                               command=lambda: createNIConfig(gui))
-  nozzleConfigBtn.grid(row= 1, column=0, sticky="nsew")
-
-  impulseConfigBtn = ttk.Button(configsFrame, text="Impulse Calculator Config",
-                                command=lambda: createImpulseConfig(gui))
-  impulseConfigBtn.grid(row=2, column=0, sticky="nsew")
-
-  curativeConfigBtn = ttk.Button(configsFrame, text="Curative Calculator Config",
-                                 command=lambda: createCurativeConfig(gui))
-  curativeConfigBtn.grid(row=3, column=0, sticky="nsew")
-
-  seriesConfigBtn = ttk.Button(configsFrame, text="Nozzle Iterator & Impulse Calculator Config",
-                               command=lambda: createSeriesConfig(gui))
-  seriesConfigBtn.grid(row=4,column=0, sticky="nsew")
+  propConfigBtn = ttk.Button(configsFrame, text="Upload or Create Configs",
+                               command=lambda: handleConfig(gui))
+  propConfigBtn.grid(row= 1, column=0, sticky="nsew")
 
   gui.mainloop()
 
@@ -87,22 +82,118 @@ def runNozzleIterator():
   if config is not None:  
     sub.run([sys.executable, "NozzleIterator/NozzleIterator.py", config], check=True)
 
-def createNIConfig(gui):
+def handleConfig(gui):
   popup = tk.Toplevel(gui)
-  popup.wait_window()
-  popup.title('Iterator Configuration Settings ')
   
-  header = ttk.Label(popup, text="Configuration settings -- Units: Length - m, Angle - deg, " \
-                    "Pressure - Pa, Temperature - K, Density - kg/m^3")
-  header.grid(row=0, column=0, sticky ="ew")
+  popup.transient(gui) # Keep it on top of main window
+  popup.grab_set()   
 
-def createImpulseConfig(gui):
+  popup.columnconfigure(0, weight=2)
+  popup.columnconfigure(2, weight=7)
+  popup.geometry("900x600") # width px by height px
+
+  optionsFrame = tk.Frame(popup,borderwidth=1,relief="solid")
+  optionsFrame.grid(row=0, column=0, rowspan=10, sticky='nsew')
+
+  fakeLabelFrame =tk.Frame(popup)
+  fakeLabelFrame.grid(row=0, column=2, sticky='nsew', padx=2)
+  fakeFrame = tk.Frame(popup)
+  fakeFrame.grid(row=1,column=2, sticky='nsew', padx=2)
+
+  configLabel = tk.Button(optionsFrame, text="Create Propellant",command=lambda: createPropellant(popup))
+  configLabel.grid(row=0,column=0,sticky='nsew')
+
+  configLabel = tk.Button(optionsFrame, text="Create Grain Geometry",command=lambda: createGrainGeometry(popup))
+  configLabel.grid(row=1,column=0,sticky='nsew')
+
+
+
+def createPropellant(popup):
+
+  propFrame = tk.Frame(popup, borderwidth=1, relief="solid")
+  propFrame.grid(row=1, column=2, sticky= 'nsew')
+
+  propLabelFrame = tk.Frame(popup, borderwidth=1, relief="solid")
+  propLabelFrame.grid(row=0,column=2, sticky='nsew')
+
+  propLabelFrame.columnconfigure(0, weight=1)
+
+  propFrame.rowconfigure([0,1,2,3], weight=1)
+  propFrame.columnconfigure([0,1,2,3], weight=1)
+
+  fields = [
+            "Propellant Name", "Density - Kg/m^3", "Max Pressure - Pa", "Min Pressure - Pa",
+            "Burn Rate Coefficient" , "Burn Rate Exponent", "Specific Heat Ratio",
+            "Combustion Temperature - K", "Exhaust Molar Mass - g/mol"
+            ]
+  
+  propLabel = tk.Label(propLabelFrame, text="Propellant Config", anchor="center", justify="center")
+  propLabel.grid(row=0, column=0, sticky = 'nsew')
+
+  entries = createLabledEntryBoxes(propFrame, fields)
+
+  saveButton = tk.Button(propFrame, text="Save Config", command=lambda: saveEntries(entries,"Propellant"),
+                        borderwidth=1, relief="solid")
+  
+  saveButton.grid(row=8,column=5, padx=4, pady=4,sticky = 'se')
+
+
+def createLabledEntryBoxes(parent, fields):
+
+  entries = {}
+  j = 1
+  for i, field in enumerate(fields):
+
+    # Wrap every 4 columns
+    if i > 3:
+      i = i % 4
+      if i % 4 == 0:
+        j += 2 
+
+    label = tk.Label(parent, text=field)
+    label.grid(row=j,column=i,sticky='nsew', padx=14, pady=6)
+
+    entry = tk.Entry(parent)
+    entry.grid(row=j+1, column=i, sticky='nsew', padx=14, pady=4)
+    
+    entries[field] = entry
+
+  return entries
+  
+def saveEntries(entries, configName):
+    
+    entryVals = {}
+    for field in entries.keys():
+      entryVals[field] = entries[field].get()
+    
+    if configName == "Propellant":
+      configurePropellantDict(entryVals)
+
+    print(configs)
+
+def configurePropellantDict(entryVals):
+  configs["Propellant"] = {}
+  configs["Propellant"]["tabs"] = {}
+  configs["Propellant"]["name"] = entryVals["Propellant Name"]
+  configs["Propellant"]["density"] = entryVals["Density - Kg/m^3"]
+  configs["Propellant"]["tabs"]["maxPressure"] = entryVals["Max Pressure - Pa"]
+  configs["Propellant"]["tabs"]["minPressure"] = entryVals["Min Pressure - Pa"]
+  configs["Propellant"]["tabs"]["a"] = entryVals["Burn Rate Coefficient"]
+  configs["Propellant"]["tabs"]["n"] = entryVals["Burn Rate Exponent"]
+  configs["Propellant"]["tabs"]["k"] = entryVals["Specific Heat Ratio"]
+  configs["Propellant"]["tabs"]["t"] = entryVals["Combustion Temperature - K"]
+  configs["Propellant"]["tabs"]["m"] = entryVals["Exhaust Molar Mass - g/mol"]
+
+def grainConfig(gui):
   pass
 
-def createCurativeConfig(gui):
+def OMConfig(gui):
   pass
 
-def createSeriesConfig(gui):
+def NIConfig(gui):
+  pass
+
+def preSavedConfig(gui):
   pass
   
 def runImpulseCalc():
