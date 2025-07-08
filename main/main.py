@@ -114,7 +114,7 @@ def handleConfig(gui):
 
   popup.columnconfigure(0, weight=2)
   popup.columnconfigure(2, weight=7)
-  popup.geometry("1000x300") # width px by height px
+  popup.geometry("1200x500") # width px by height px
 
   optionsFrame = tk.Frame(popup)
   optionsFrame.grid(row=0, column=0, rowspan=10, sticky='nsew')
@@ -172,15 +172,17 @@ def createLabledEntryBoxes(parent, fields, dropDown):
     
     entries[field] = entry
     if dropDown is not None and currIndex == len(fields) - 1:
+      for key in dropDown:
+        label = tk.Label(parent, text=key)
+        label.grid(row=j,column=i+1,sticky='nsew', padx=14, pady=6)
 
-      label = tk.Label(parent, text=dropDown[0])
-      label.grid(row=j,column=i+1,sticky='nsew', padx=14, pady=6)
+        comboBox = ttk.Combobox(parent, values=dropDown[key])
+        comboBox.grid(row=j+1,column=i+1,sticky='nsew', padx=14, pady=6)
+        comboBox.set("Select Preference")
 
-      comboBox = ttk.Combobox(parent, values=dropDown[1])
-      comboBox.grid(row=j+1,column=i+1,sticky='nsew', padx=14, pady=6)
-      comboBox.set("Select Preference")
+        i+=1 
 
-      entries[dropDown[0]] = comboBox
+        entries[key] = comboBox
 
     currIndex += 1
 
@@ -192,23 +194,19 @@ def saveEntries(entries, configName):
     for field in entries.keys():
       entryVals[field] = entries[field].get()
     
-    if configName == "Propellant":
+    if configName == "Propellant Config":
       configurePropellantDict(entryVals)
-    elif configName == "OMsetting":
+    elif configName == "OpenMotor settings Config - this program features default OM settings unless changed here":
       configureOMDict(entryVals)
-    elif configName == "NozzleIterator":
+    elif configName == "Nozzle Iterator":
       configureNIDict(entryVals)
-    elif configName == "Grain":
-      configureGrains(entryVals)
 
     print(configs)
 
 def createPropellant(popup):
 
-  saveRow = 8
   labelName = "Propellant Config"
   dropDown = None
-  saveName = "Propellant"
 
   fields = [
             "Propellant Name", "Density - Kg/m^3", "Max Pressure - Pa", "Min Pressure - Pa",
@@ -216,16 +214,14 @@ def createPropellant(popup):
             "Combustion Temperature - K", "Exhaust Molar Mass - g/mol"
             ]
     
-  createSettingsPage(labelName, fields, saveRow, popup, dropDown, saveName)
+  createSettingsPage(labelName, fields, popup, dropDown)
 
 def grainConfig(gui):
   pass
 
 def createOMsettings(popup):
-  labelName = "OpenMotor settings Config"
-  saveRow = 8
+  labelName = "OpenMotor settings Config - this program features default OM settings unless changed here"
   dropDown = None
-  saveName = "OMsetting"
 
   fields = [
             "Max Pressure - Pa", "Max Mass Flux - kg/(m^2*s)", "Max Mach Number", "Min Port Throat Ratio",
@@ -233,24 +229,25 @@ def createOMsettings(popup):
             "Ambient Pressure - Pa", "Grain Map Dimension", "Separation Pressure Ratio" 
             ]
   
-  createSettingsPage(labelName, fields, saveRow, popup, dropDown, saveName)
+  createSettingsPage(labelName, fields, popup, dropDown)
 
 def createNozzleIterator(popup):
   labelName = "Nozzle Iterator"
-  saveRow = 8
-  dropDown = ["Search Preference", ["ISP", "ThrustCoef", "burnTime", "Impulse", "AvgThrust"]]
-  saveName = "NozzleIterator"
+  dropDown = { 
+                "Search Preference" : ["ISP", "ThrustCoef", "burnTime", "Impulse", "AvgThrust"], 
+                "Parallel Simulation (Harder on computer)" : ["True", "False"]
+              }
 
   fields = [
             "Min Throat Diameter - m", "Max Throat Diameter - m", "Min Throat Length - m", "Max Throat Length - m",
             "Exit Half Angle - deg","Slag Coefficient - (m*Pa)/s","Erosion Coefficient - s/(m*Pa)","Efficiency - 0.##",
-            "Nozzle Diameter - m", "Nozzle Length - m", "Min Half Convergence Angle - deg", "Max Half Convergence Angle - deg",
-            "Iteraton Step Size - m"
+            "Nozzle Diameter - m", "Nozzle Length - m", "Min Conv Half Angle - deg", "Max Conv Half Angle - deg",
+            "Iteraton Step Size - m", " # Threads to allocate for simulation"
             ]
   
-  createSettingsPage(labelName, fields, saveRow, popup, dropDown, saveName)
+  createSettingsPage(labelName, fields, popup, dropDown)
 
-def createSettingsPage(labelName, fields, saveRow, popup, dropDown, saveName):
+def createSettingsPage(labelName, fields, popup, dropDown):
 
   frame = tk.Frame(popup, borderwidth=1, relief="solid")
   frame.grid(row=1, column=2, sticky= 'nsew')
@@ -268,10 +265,10 @@ def createSettingsPage(labelName, fields, saveRow, popup, dropDown, saveName):
 
   entries = createLabledEntryBoxes(frame, fields, dropDown)
 
-  saveButton = tk.Button(frame, text="Save Config", command=lambda: saveEntries(entries,saveName),
+  saveButton = tk.Button(frame, text="Save Config", command=lambda: saveEntries(entries,labelName),
                         borderwidth=1, relief="solid")
   
-  saveButton.grid(row=saveRow,column=5, padx=4, pady=4, sticky = 'se')
+  saveButton.grid(row=8,column=5, padx=4, pady=4, sticky = 'se')
 
 
 def preSavedConfig(gui):
@@ -304,7 +301,7 @@ def configureOMDict(entryVals):
   configs["Motor"]["SimulationParameters"]["maxMassFlux"] = entryVals["Max Mass Flux - kg/(m^2*s)"]
   configs["Motor"]["SimulationParameters"]["maxMachNumber"] = entryVals["Max Mach Number"]
   configs["Motor"]["SimulationParameters"]["minPortThroat"] = entryVals["Min Port Throat Ratio"]
-  configs["Motor"]["SimulationParameters"]["flowSeparationWarmPercent"] = entryVals["Flow Separation Precent - 0.##"]
+  configs["Motor"]["SimulationParameters"]["flowSeparationWarnPercent"] = entryVals["Flow Separation Precent - 0.##"]
   configs["Motor"]["SimulationBehavior"]["burnoutWebThres"] = entryVals["Burnout Web Threshold - m"]
   configs["Motor"]["SimulationBehavior"]["burnoutThrustThrus"] = entryVals["Burnout Thrust Threshold"]
   configs["Motor"]["SimulationBehavior"]["timestep"] = entryVals["Time step - s"]
@@ -324,11 +321,14 @@ def configureNIDict(entryVals):
   configs["Nozzle"]["Efficiency"] = entryVals["Efficiency - 0.##"]
   configs["Nozzle"]["nozzleDia"] = entryVals["Nozzle Diameter - m"]
   configs["Nozzle"]["nozzleLength"] = entryVals["Nozzle Length - m"]
-  configs["Nozzle"]["minHalfConv"] = entryVals["Min Half Convergence Angle - deg"]
-  configs["Nozzle"]["maxHalfConv"] = entryVals["Max Half Convergence Angle - deg"]
+  configs["Nozzle"]["minHalfConv"] = entryVals["Min Conv Half Angle - deg"]
+  configs["Nozzle"]["maxHalfConv"] = entryVals["Max Conv Half Angle - deg"]
   configs["Nozzle"]["nozzleDia"] = entryVals["Nozzle Diameter - m"]
   configs["Nozzle"]["iteration_step_size"] = entryVals["Iteraton Step Size - m"]
   configs["Nozzle"]["preference"] = entryVals["Search Preference"]
+  configs["Nozzle"]["parallel_mode"] = entryVals["Parallel Simulation (Harder on computer)"]
+  configs["Nozzle"]["iteration_threads"] = entryVals[" # Threads to allocate for simulation"]
+
 
 if __name__ == '__main__':
   main()

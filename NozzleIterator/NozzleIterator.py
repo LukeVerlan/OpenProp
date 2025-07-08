@@ -17,6 +17,7 @@ if repo_root not in sys.path:
 # Open Motor Classes
 from motorlib.propellant import Propellant
 from motorlib.grains.bates import BatesGrain
+from motorlib.grains.finocyl import Finocyl
 from motorlib.nozzle import Nozzle
 from motorlib.motor import Motor
 
@@ -30,6 +31,19 @@ import time
 from NozzleIterator.ConfigWrapper import ConfigWrapper
 from NozzleIterator.SimulationUI import SimulationUI
 
+# Multicore processing tools
+import concurrent.futures
+from itertools import product
+
+
+# Used for multicore processesing black magic
+def frange(start, stop, step):
+    vals = []
+    while start <= stop + 1e-8:
+        vals.append(round(start, 8))
+        start += step
+    return vals
+
 # Brief - Parses the config given to the nozzle files and runs the simluation flow
 def main():
 
@@ -42,8 +56,14 @@ def main():
   with open(configFile, 'r') as file:
     propConfig = json.load(file)
   
-  setupProp(propConfig)
-  bestConfiguration = iteration(propConfig["Nozzle"])
+  motor = setupProp(propConfig)
+
+  # From config or CLI
+  parallel_mode = propConfig.get("parallel_mode", True)
+  max_threads = propConfig.get("iteration_threads", None)
+
+  bestConfiguration = iteration(propConfig["Nozzle"], motor, max_threads, parallel_mode)
+
   (simRes, nozzle) = bestConfiguration
   iterationResult(simRes, nozzle)
 
@@ -56,16 +76,25 @@ def setupProp(propConfig):
 
     for grain_cfg in propConfig["Grains"]:
         grain_type = grain_cfg["type"]
+
         if grain_type == "BATES":
-            grain = BatesGrain()
-            grain.props['coreDiameter'].setValue(grain_cfg['coreDiameter'])
-            grain.props['inhibitedEnds'].setValue(grain_cfg['inhibitedEnds'])
+          grain = BatesGrain()
+          grain.props['coreDiameter'].setValue(grain_cfg['coreDiameter'])
+          grain.props['inhibitedEnds'].setValue(grain_cfg['inhibitedEnds'])
+          
+        if grain_type == "FINOCYL":
+          grain = Finocyl()
+          grain.props['numFins'].setValue(grain_cfg['numFins'])
+          grain.props['finWidth'].setValue(grain_cfg['finWidth'])
+          grain.props['finLength'].setValue(grain_cfg['finLength'])
+          grain.props['coreDiameter'].setValue(grain_cfg['coreDiameter'])
+          grain.props['invertedFins'].setValue(grain_cfg['invertedFins'])
+          grain.props['inhibitedEnds'].setValue(grain_cfg['inhibitedEnds'])
 
         grain.props['diameter'].setValue(grain_cfg['diameter'])
         grain.props['length'].setValue(grain_cfg['length'])
         localGrains.append(grain)
 
-    global motor
     motor = Motor()
     
     # Combine simulation parameters and behavior dicts
@@ -77,77 +106,107 @@ def setupProp(propConfig):
     motor.propellant = prop
     motor.grains = localGrains
 
+    return motor
+
 # Breif - Performs the iterative solving of the nozzle
 # param nozzleConfig - configuration dictionary of the nozzle
-# param simluationConfig - configuration dictionary of the simluation
 # return - tuple with the best nozzle and motor sim respectively 
-def iteration(nozzleConfig):
+def iteration(nozzleConfig, motor, max_threads=None, parallel_mode=True):
+    stepSize = nozzleConfig["iteration_step_size"]
 
-  # Store config files in dict
-  stepSize = nozzleConfig["iteration_step_size"]
+    # Create sweep grid
+    throat_vals = frange(nozzleConfig["minDia"], nozzleConfig["maxDia"], stepSize)
+    throatLength_vals = frange(nozzleConfig["minLen"], nozzleConfig["maxLen"], stepSize)
+    combinations = list(product(throat_vals, throatLength_vals))
 
-  # Iterative class Dimenions
-  throat = nozzleConfig["minDia"]
-  throatLength = nozzleConfig["minLen"]
+    print(f"\n🔁 Preparing {len(combinations)} simulations...")
+    start_time = time.perf_counter()
 
-  nozzle = {}
+    # Fallback container
+    results = []
 
-  # Known class Dimensions
-  nozzle['divAngle'] = nozzleConfig["exitHalf"]
-  nozzle['efficiency'] = nozzleConfig["Efficiency"]
-  nozzle['slagCoeff'] = nozzleConfig["SlagCoef"]
-  nozzle['erosionCoeff'] = nozzleConfig["ErosionCoef"]
-  nozzle['exit'] = nozzleConfig['exitDia']
+    # Decide whether to run parallel or not
+    if parallel_mode:
+        try:
+            batch_size = 100
+            with concurrent.futures.ProcessPoolExecutor(max_workers=max_threads) as executor:
+                for i in range(0, len(combinations), batch_size):
+                    batch = combinations[i:i+batch_size]
+                    futures = [
+                        executor.submit(simulate_point, throat, throatLen, nozzleConfig, motor)
+                        for throat, throatLen in batch
+                    ]
+                    for future in concurrent.futures.as_completed(futures):
+                        result = future.result()
+                        if result is not None:
+                            results.append(result)
+        except Exception as e:
+            print(f"\n Parallel execution failed: {e}\nFalling back to sequential mode...\n")
+            results = run_simulations_sequentially(combinations, nozzleConfig, motor)
+    else:
+        results = run_simulations_sequentially(combinations, nozzleConfig, motor)
 
-  # Set comparison 
-  bestSim = None
-  bestNozzle = None
+    # Select best
+    bestSim, bestNozzle = None, None
+    for simRes, nozzle in results:
+        if bestSim is None or isPriority(nozzleConfig["preference"], simRes, bestSim, nozzle, bestNozzle):
+            bestSim = simRes
+            bestNozzle = nozzle
 
-  # Timer
-  start_time = time.perf_counter()
+    elapsed_time = time.perf_counter() - start_time
+    print(f"\n✅ Completed {len(results)} successful simulations in {elapsed_time:.2f} seconds")
+    return bestSim, bestNozzle
 
-  print('Running Simulation!')
+def run_simulations_sequentially(combinations, nozzleConfig, motor):
+    print("🧱 Running sequentially (1 core)...")
+    results = []
+    for throat, throatLen in combinations:
+        result = simulate_point(throat, throatLen, nozzleConfig, motor)
+        if result is not None:
+            results.append(result)
+    return results
 
-  while throat <= nozzleConfig["maxDia"]:
+def simulate_point(throat, throatLength, nozzleConfig, motor_serialized):
+    import copy
+    from motorlib.nozzle import Nozzle
 
-    nozzle["throat"] = throat
+    motor = copy.deepcopy(motor_serialized)
 
-    while throatLength <= nozzleConfig["maxLen"]:
+    nozzle = {
+        "throat": throat,
+        "throatLength": throatLength,
+        "divAngle": nozzleConfig["exitHalf"],
+        "efficiency": nozzleConfig["Efficiency"],
+        "slagCoeff": nozzleConfig["SlagCoef"],
+        "erosionCoeff": nozzleConfig["ErosionCoef"],
+        "exit": nozzleConfig['exitDia'],
+    }
 
-      nozzle["throatLength"] = throatLength
-      nozzle["convAngle"] = calcConvergenceHalfAngle(nozzleConfig["nozzleDia"], nozzleConfig["nozzleLength"],
-                                                    throat, throatLength, nozzle["divAngle"], nozzle["exit"])
-      
-      convHalf = nozzle["convAngle"]
-      if convHalf <= nozzleConfig["maxHalfConv"] and convHalf >= nozzleConfig["minHalfConv"]:
+    convAngle = calcConvergenceHalfAngle(
+        nozzleConfig["nozzleDia"],
+        nozzleConfig["nozzleLength"],
+        throat,
+        throatLength,
+        nozzle["divAngle"],
+        nozzle["exit"]
+    )
 
-        # Simulation setup 
-        currNozz = Nozzle()
+    if not (nozzleConfig["minHalfConv"] <= convAngle <= nozzleConfig["maxHalfConv"]):
+        return None
 
-        for key, value in nozzle.items():
-          if key in currNozz.props:
+    nozzle["convAngle"] = convAngle
+
+    currNozz = Nozzle()
+    for key, value in nozzle.items():
+        if key in currNozz.props:
             currNozz.props[key].setValue(value)
 
-        motor.nozzle = currNozz
+    motor.nozzle = currNozz
+    simRes = motor.runSimulation()
 
-        # simluate
-        simRes = motor.runSimulation()
-       
-        # compare to old best nozzle
-        if simRes.success and (bestSim is None or isPriority(nozzleConfig["preference"], simRes, bestSim)):
-          bestSim = simRes
-          bestNozzle = copy.deepcopy(nozzle)
-
-      throatLength += stepSize
-
-    throatLength = nozzleConfig['minLen']
-    throat += stepSize
-
-  end_time = time.perf_counter()
-  elapsed_time = end_time - start_time
-  print(f"Code executed in: {elapsed_time:.4f} seconds")
-
-  return (bestSim, bestNozzle)
+    if simRes.success:
+        return simRes, nozzle
+    return None
 
 # Brief - Calculates the convergence half angle of a nozzle given other dimensions
 # param dia - overall diameter of the nozzle
@@ -217,20 +276,14 @@ def getExpansionRatio(throatDia, exitDia):
 # param priority - criteria to base preference on
 # param simRes - similuation to compare to 
 # param bestSim - current best simulation
-def isPriority(priority, simRes, bestSim):
-
-  if priority == "ISP":
-    return simRes.getISP() > bestSim.getISP()
-  elif priority == "ThrustCoef":
-    return simRes.getIdealThrustCoefficient() > bestSim.getIdealThrustCoefficient()
-  elif priority == "AvgThrust":
-    return simRes.getAverageForce() > bestSim.getAverageForce()
-  elif priority == "Impulse":
-    return simRes.getImpulse() > bestSim.getImpulse() 
-  elif priority == "burnTime":
-    return simRes.getBurnTime() > bestSim.getBurnTime()
-  else: 
-    ValueError()
+def isPriority(priority, simRes, bestSim, nozzle=None, bestNozzle=None):
+    throat_penalty_factor = 0.1  # Adjust as needed
+    min_safe_throat_length = 0.012
+    score = getattr(simRes, f"get{priority}")()
+    if nozzle and nozzle["throatLength"] < min_safe_throat_length:
+        score *= (1 - throat_penalty_factor)
+    best_score = getattr(bestSim, f"get{priority}")()
+    return score > best_score
 
 # This is the standard boilerplate that calls the main() function.
 if __name__ == '__main__':
