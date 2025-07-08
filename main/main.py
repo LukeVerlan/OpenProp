@@ -173,6 +173,7 @@ def createLabledEntryBoxes(parent, fields, dropDown):
     entries[field] = entry
     if dropDown is not None and currIndex == len(fields) - 1:
       for key in dropDown:
+
         label = tk.Label(parent, text=key)
         label.grid(row=j,column=i+1,sticky='nsew', padx=14, pady=6)
 
@@ -188,7 +189,7 @@ def createLabledEntryBoxes(parent, fields, dropDown):
 
   return entries
   
-def saveEntries(entries, configName):
+def saveEntries(entries, configName, type):
     
     entryVals = {}
     for field in entries.keys():
@@ -196,10 +197,12 @@ def saveEntries(entries, configName):
     
     if configName == "Propellant Config":
       configurePropellantDict(entryVals)
-    elif configName == "OpenMotor settings Config - this program features default OM settings unless changed here":
+    elif configName.startswith("OpenMotor"):
       configureOMDict(entryVals)
     elif configName == "Nozzle Iterator":
       configureNIDict(entryVals)
+    elif configName == "Grain":
+      configureGrainDict(entryVals, type)
 
     print(configs)
 
@@ -249,26 +252,127 @@ def createNozzleIterator(popup):
 
 def createSettingsPage(labelName, fields, popup, dropDown):
 
+  frame = createBaseFrame(popup)
+  labelFrame = createLabelFrame(popup,labelName)
+
+  entries = createLabledEntryBoxes(frame, fields, dropDown)
+
+  saveButton = tk.Button(frame, text="Save Config", command=lambda: saveEntries(entries,labelName, None),
+                        borderwidth=1, relief="solid")
+  
+  saveButton.grid(row=8,column=5, padx=4, pady=4, sticky = 'se')
+
+def createBaseFrame(popup):
+
   frame = tk.Frame(popup, borderwidth=1, relief="solid")
   frame.grid(row=1, column=2, sticky= 'nsew')
+
+  frame.rowconfigure([0,1,2,3], weight=1)
+  frame.columnconfigure([0,1,2,3], weight=1)
+
+  return frame
+
+def createLabelFrame(popup, labelName):
 
   labelFrame = tk.Frame(popup, borderwidth=1, relief="solid")
   labelFrame.grid(row=0,column=2, sticky='nsew')
 
+  frameLabel = tk.Label(labelFrame, text=labelName, anchor="center", justify="center")
+  frameLabel.grid(row=0, column=0, sticky = 'nsew')
+
   labelFrame.columnconfigure(0, weight=1)
 
-  frame.rowconfigure([0,1,2,3], weight=1)
-  frame.columnconfigure([0,1,2,3], weight=1)
+  return labelFrame
+
+
+def createGrainGeometry(popup):
+
+  labelFrame = tk.Frame(popup, borderwidth=1, relief="solid")
+  labelFrame.grid(row=0,column=2, sticky='nsew')
+
+  frameLabel = tk.Label(labelFrame, text="Grain Geometry Configurator", anchor="center", justify="center")
+  frameLabel.grid(row=0, column=0, sticky = 'nsew')
+
+  labelFrame.columnconfigure(0, weight=1)
+
+  functionFrame = tk.Frame(popup)
+  functionFrame.grid(row=1,column=2,sticky='nsew')
+
+  functionFrame.rowconfigure([0,1,2,3], weight=1)
+  functionFrame.columnconfigure([0,1,2,3], weight=1)
   
-  propLabel = tk.Label(labelFrame, text=labelName, anchor="center", justify="center")
-  propLabel.grid(row=0, column=0, sticky = 'nsew')
+  addGrainButton = tk.Button(labelFrame, text="Add Grain", command=lambda: addGrains(functionFrame))
+  addGrainButton.grid(row=1, column=0, padx=10, pady=15)
+
+  if "Grains" in configs and configs["Grains"] is not None:
+    deleteGrainButton = tk.Button(labelFrame, text="Delete Grains", command=lambda: deleteGrains(functionFrame))
+    deleteGrainButton.grid(row=1,column=1,padx=10,pady=15)
+    viewGrainsButton = tk.Button(labelFrame, text="View Grains", command=lambda: viewGrains(functionFrame))
+    viewGrainsButton.grid(row=1, column=2, padx=10,pady=15)
+    copyGrainsButton = tk.Button(labelFrame, text="Copy Grains", command=lambda: copyGrains(functionFrame))
+    copyGrainsButton.grid(row=1, column=2, padx=10,pady=15)
+
+
+    
+def addGrains(frame):
+
+  if "Grains" in configs and configs["Grains"] is not None:
+    configs["Grains"] = []
+
+  grainSelectFrame = tk.Frame(frame)
+  grainSelectFrame.grid(row=0,column=0,sticky='nsew')
+
+  grainAdditionFrame = tk.Frame(frame)
+  grainAdditionFrame.grid(row=1,column=0,sticky = 'nsew')
+
+  grainSelect = ttk.Combobox(grainSelectFrame, values=["BATES","FINOCYL"])
+  grainSelect.grid(row=0,column=0,sticky='nsew', padx=14, pady=6)
+  grainSelect.set("Select Grain")
+
+  grainSelectaddButton = tk.Button(grainSelectFrame, text="Set", command=lambda: addGrainWindow(grainAdditionFrame, grainSelect.get()))
+  grainSelectaddButton.grid(row=0,column=1,sticky='nsew')
+
+  grainAdditionFrame.rowconfigure(0,weight=1)
+
+def addGrainWindow(frame, type):
+
+  if type == "BATES":
+    dropDown = { 
+                  "Inhibited Ends" : ["Top", "Bottom", "Neither"], 
+                }
+
+    fields = [
+              "Core Diameter - m", "Diameter - m", "Length - m" 
+              ]
+  elif type == "FINOCYL":
+
+    dropDown = { 
+                  "Inhibited Ends" : ["Top", "Bottom", "Neither"], 
+                  "Inverted Fins" : ["True", "False"]
+                }
+
+    fields = [
+              "Core Diameter - m", "Diameter - m", "Length - m", "Number of Fins", "Fin Length - m",
+              "Fin Width - m"
+              ]
+    
+  frame = clear(frame)
 
   entries = createLabledEntryBoxes(frame, fields, dropDown)
+  
 
-  saveButton = tk.Button(frame, text="Save Config", command=lambda: saveEntries(entries,labelName),
+
+  saveButton = tk.Button(frame, text="Save Config", command=lambda: saveEntries(entries,"Grain", type),
                         borderwidth=1, relief="solid")
   
   saveButton.grid(row=8,column=5, padx=4, pady=4, sticky = 'se')
+
+def clear(frame):
+
+  for widget in frame.winfo_children():
+      widget.destroy()
+
+  return frame
 
 
 def preSavedConfig(gui):
@@ -329,6 +433,21 @@ def configureNIDict(entryVals):
   configs["Nozzle"]["parallel_mode"] = entryVals["Parallel Simulation (Harder on computer)"]
   configs["Nozzle"]["iteration_threads"] = entryVals[" # Threads to allocate for simulation"]
 
+def configureGrainDict(entryVals, type):
+
+  configs["Grains"].append({})
+  configs["Grains"][-1]['type'] = type
+  configs["Grains"][-1]['length'] = entryVals["Length - m"]
+  configs["Grains"][-1]['diameter'] = entryVals["Diameter - m"]
+  configs["Grains"][-1]['coreDiameter'] = entryVals["Core Diameter - m"]
+  configs["Grains"][-1]['inhibitedEnds'] = entryVals["Inhibited Ends"]
+
+
+  if type == "FINOCYL":
+   configs["Grains"][-1]['invertedFins'] = entryVals["Inverted Fins"]
+   configs["Grains"][-1]['numFins'] = entryVals["Number of Fins"]
+   configs["Grains"][-1]['finLength'] = entryVals["Fin Length - m"]
+   configs["Grains"][-1]['finWidth'] = entryVals["Fin Width - m"]
 
 if __name__ == '__main__':
   main()
