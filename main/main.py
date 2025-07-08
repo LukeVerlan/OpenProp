@@ -316,9 +316,6 @@ def createGrainGeometry(popup):
     
 def addGrains(frame):
 
-  if "Grains" in configs and configs["Grains"] is not None:
-    configs["Grains"] = []
-
   grainSelectFrame = tk.Frame(frame)
   grainSelectFrame.grid(row=0,column=0,sticky='nsew')
 
@@ -434,6 +431,9 @@ def configureNIDict(entryVals):
   configs["Nozzle"]["iteration_threads"] = entryVals[" # Threads to allocate for simulation"]
 
 def configureGrainDict(entryVals, type):
+
+  if "Grains" in configs and configs["Grains"] is not None:
+    configs["Grains"] = []
 
   configs["Grains"].append({})
   configs["Grains"][-1]['type'] = type
