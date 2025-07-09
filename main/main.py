@@ -73,16 +73,13 @@ def main():
                          command=runNozzleIterator)
   nozzleBtn.grid(row=1, column=0, sticky="nsew")
 
-  impulseBtn = ttk.Button(functionsFrame, text="Impulse Calculator",
-                          command=runImpulseCalc)
+  impulseBtn = ttk.Button(functionsFrame, text="Impulse Calculator")
   impulseBtn.grid(row=2, column=0, sticky="nsew")
 
-  curativeBtn = ttk.Button(functionsFrame, text="Curative Calculator",
-                          command=runCurativeCalculator)
+  curativeBtn = ttk.Button(functionsFrame, text="Curative Calculator")
   curativeBtn.grid(row=3, column=0, sticky="nsew")
 
-  seriesBtn = ttk.Button(functionsFrame, text="Nozzle Iterator & Impulse Calculator",
-                         command=runSeries)
+  seriesBtn = ttk.Button(functionsFrame, text="Nozzle Iterator & Impulse Calculator")
   seriesBtn.grid(row=4,column=0, sticky="nsew")
 
   # Configurations 
@@ -95,9 +92,9 @@ def main():
   configsLabel = tk.Label(configsFrame, text="Settings")
   configsLabel.grid(row=0, column=0, sticky = "nsew")
 
-  propConfigBtn = ttk.Button(configsFrame, text="Upload or Create Configs",
-                               command=lambda: handleConfig(gui))
-  propConfigBtn.grid(row= 1, column=0, sticky="nsew")
+  createConfigBtn = ttk.Button(configsFrame, text="Upload or Create Configs",
+                               command=lambda: handleCreateConfig(gui))
+  createConfigBtn.grid(row= 1, column=0, sticky="nsew")
 
   gui.mainloop()
 
@@ -106,7 +103,7 @@ def runNozzleIterator():
   if config is not None:  
     sub.run([sys.executable, "NozzleIterator/NozzleIterator.py", config], check=True)
 
-def handleConfig(gui):
+def handleCreateConfig(gui):
   popup = tk.Toplevel(gui)
   
   popup.transient(gui) # Keep it on top of main window
@@ -121,6 +118,7 @@ def handleConfig(gui):
 
   fakeLabelFrame =tk.Frame(popup)
   fakeLabelFrame.grid(row=0, column=2, sticky='nsew', padx=2)
+
   fakeFrame = tk.Frame(popup)
   fakeFrame.grid(row=1,column=2, sticky='nsew', padx=2)
 
@@ -148,8 +146,12 @@ def handleConfig(gui):
   OMCUploadLabel = tk.Button(optionsFrame, text="Uplaod Open Motor config",command=lambda: uploadOMsettings(popup))
   OMCUploadLabel.grid(row=7,column=0,sticky='nsew', pady=2)
   
-  preSavedConfigLabel = tk.Button(optionsFrame, text="Upload complete preset",command=lambda: uploadPreSavedsettings(popup))
+  preSavedConfigLabel = tk.Button(optionsFrame, text="Upload complete preset",command=lambda: uploadCompleteConfig(popup))
   preSavedConfigLabel.grid(row=8,column=0,sticky='nsew', pady=2)
+
+  savedConfigs = tk.Button(optionsFrame, text="Save Current Configs",command=lambda: saveCurrentConfigs(popup))
+  savedConfigs.grid(row=9,column=0,sticky='nsew', pady=2)
+
 
 def createLabledEntryBoxes(parent, fields, dropDown):
 
@@ -265,7 +267,7 @@ def createSettingsPage(labelName, fields, popup, dropDown):
 def createBaseFrame(popup):
 
   frame = tk.Frame(popup, borderwidth=1, relief="solid")
-  frame.grid(row=1, column=2, sticky= 'nsew')
+  frame.grid(row=1, column=1, sticky= 'nsew')
 
   frame.rowconfigure([0,1,2,3], weight=1)
   frame.columnconfigure([0,1,2,3], weight=1)
@@ -275,7 +277,7 @@ def createBaseFrame(popup):
 def createLabelFrame(popup, labelName):
 
   labelFrame = tk.Frame(popup, borderwidth=1, relief="solid")
-  labelFrame.grid(row=0,column=2, sticky='nsew')
+  labelFrame.grid(row=0,column=1, sticky='nsew')
 
   frameLabel = tk.Label(labelFrame, text=labelName, anchor="center", justify="center")
   frameLabel.grid(row=0, column=0, sticky = 'nsew')
@@ -284,11 +286,47 @@ def createLabelFrame(popup, labelName):
 
   return labelFrame
 
+def uploadCompleteConfig(popup):
+
+  labelFrame = createLabelFrame(popup, "Upload Complete config")
+
+  frame = createBaseFrame(popup)
+
+  uploadButton = tk.Button(frame, text='Upload', command=lambda:uploadConfig(frame, 'All'))
+  uploadButton.grid(row=0,column=0)
+
+def has_all_top_configs(config):
+    required_keys = ["Propellant", "Grains", "Nozzle", "Motor"]
+    return all(key in config for key in required_keys)
+
+  
+def uploadConfig(frame, type):
+    configPath = fd.askopenfilename()
+    with open(configPath, "r") as f:
+        config = json.load(f)
+
+    validLabel = tk.Label(frame, text="Valid Config")
+    invalidLabel = tk.Label(frame, text="Invalid Config")
+
+    if type == 'All':
+        if has_all_top_configs(config):
+            validLabel.grid(row=0, column=1)
+            addToConfigs(config, type)
+        else:
+            invalidLabel.grid(row=0, column=1)
+
+def addToConfigs(config, type):
+
+  if type == 'All':
+    configs["Grains"] = config["Grains"]
+    configs["Motor"] = config["Motor"]
+    configs["Nozzle"] = config["Nozzle"]
+    configs["Propellant"] = config["Propellant"]
 
 def createGrainGeometry(popup):
 
   labelFrame = tk.Frame(popup, borderwidth=1, relief="solid")
-  labelFrame.grid(row=0,column=2, sticky='nsew')
+  labelFrame.grid(row=0,column=1, sticky='nsew')
 
   frameLabel = tk.Label(labelFrame, text="Grain Geometry Configurator", anchor="center", justify="center")
   frameLabel.grid(row=0, column=0, sticky = 'nsew')
@@ -296,7 +334,7 @@ def createGrainGeometry(popup):
   labelFrame.columnconfigure(0, weight=1)
 
   functionFrame = tk.Frame(popup)
-  functionFrame.grid(row=1,column=2,sticky='nsew')
+  functionFrame.grid(row=1,column=1,sticky='nsew')
 
   functionFrame.rowconfigure([0,1,2,3], weight=1)
   functionFrame.columnconfigure([0,1,2,3], weight=1)
@@ -307,8 +345,10 @@ def createGrainGeometry(popup):
   if "Grains" in configs and configs["Grains"] is not None:
     deleteGrainButton = tk.Button(labelFrame, text="Delete Grains", command=lambda: deleteGrains(functionFrame))
     deleteGrainButton.grid(row=1,column=1,padx=10,pady=15)
+
     viewGrainsButton = tk.Button(labelFrame, text="View Grains", command=lambda: viewGrains(functionFrame))
     viewGrainsButton.grid(row=1, column=2, padx=10,pady=15)
+
     copyGrainsButton = tk.Button(labelFrame, text="Copy Grains", command=lambda: copyGrains(functionFrame))
     copyGrainsButton.grid(row=1, column=2, padx=10,pady=15)
 
@@ -370,45 +410,64 @@ def clear(frame):
       widget.destroy()
 
   return frame
-
-
-def preSavedConfig(gui):
-  pass
   
-def runImpulseCalc():
-  pass
+def saveCurrentConfigs(popup):
 
-def runSeries():
-  pass
+  createLabelFrame(popup, "Save Settings")
+  frame = createBaseFrame(popup)
 
-def runCurativeCalculator():
-  pass
+  saveButton = tk.Button(frame, text='Upload', command=lambda:cfgToJson(configs,frame))
+  saveButton.grid(row=0,column=0)
+  
+
+def cfgToJson(cfg,frame):
+    # Prompt user to select save location
+    file_path = fd.asksaveasfilename(
+        defaultextension=".json",
+        filetypes=[("JSON files", "*.json")],
+        title="Save Config As"
+    )
+
+    validLabel = tk.Label(frame, text="Successfully Saved")
+    invalidLabel = tk.Label(frame,text="Failed to Save")
+
+    if file_path:
+        try:
+            with open(file_path, 'w') as f:
+                json.dump(cfg, f, indent=4)
+            validLabel.grid(row=0, column=1)
+        except Exception as e:
+            invalidLabel.grid(row=0, column=1)
+
 
 def configurePropellantDict(entryVals):
-  configs["Propellant"] = {}
-  configs["Propellant"]["tabs"] = {}
-  configs["Propellant"]["name"] = entryVals["Propellant Name"]
-  configs["Propellant"]["density"] = entryVals["Density - Kg/m^3"]
-  configs["Propellant"]["tabs"]["maxPressure"] = entryVals["Max Pressure - Pa"]
-  configs["Propellant"]["tabs"]["minPressure"] = entryVals["Min Pressure - Pa"]
-  configs["Propellant"]["tabs"]["a"] = entryVals["Burn Rate Coefficient - m/(s*Pa^n)"]
-  configs["Propellant"]["tabs"]["n"] = entryVals["Burn Rate Exponent"]
-  configs["Propellant"]["tabs"]["k"] = entryVals["Specific Heat Ratio"]
-  configs["Propellant"]["tabs"]["t"] = entryVals["Combustion Temperature - K"]
-  configs["Propellant"]["tabs"]["m"] = entryVals["Exhaust Molar Mass - g/mol"]
+    configs["Propellant"] = {}
+    configs["Propellant"]["name"] = entryVals["Propellant Name"]
+    configs["Propellant"]["density"] = entryVals["Density - Kg/m^3"]
+    configs["Propellant"]["tabs"] = [{
+        "maxPressure": entryVals["Max Pressure - Pa"],
+        "minPressure": entryVals["Min Pressure - Pa"],
+        "a": entryVals["Burn Rate Coefficient - m/(s*Pa^n)"],
+        "n": entryVals["Burn Rate Exponent"],
+        "k": entryVals["Specific Heat Ratio"],
+        "t": entryVals["Combustion Temperature - K"],
+        "m": entryVals["Exhaust Molar Mass - g/mol"]
+    }]
+
 
 def configureOMDict(entryVals):
-  configs["Motor"]["SimulationParameters"]["maxPressure"] = entryVals["Max Pressure - Pa"]
-  configs["Motor"]["SimulationParameters"]["maxMassFlux"] = entryVals["Max Mass Flux - kg/(m^2*s)"]
-  configs["Motor"]["SimulationParameters"]["maxMachNumber"] = entryVals["Max Mach Number"]
-  configs["Motor"]["SimulationParameters"]["minPortThroat"] = entryVals["Min Port Throat Ratio"]
-  configs["Motor"]["SimulationParameters"]["flowSeparationWarnPercent"] = entryVals["Flow Separation Precent - 0.##"]
-  configs["Motor"]["SimulationBehavior"]["burnoutWebThres"] = entryVals["Burnout Web Threshold - m"]
-  configs["Motor"]["SimulationBehavior"]["burnoutThrustThrus"] = entryVals["Burnout Thrust Threshold"]
-  configs["Motor"]["SimulationBehavior"]["timestep"] = entryVals["Time step - s"]
-  configs["Motor"]["SimulationBehavior"]["ambPressure"] = entryVals["Ambient Pressure - Pa"]
-  configs["Motor"]["SimulationBehavior"]["mapDim"] = entryVals["Grain Map Dimension"]
-  configs["Motor"]["SimulationBehavior"]["sepPressureRatio"] = entryVals["Separation Pressure Ratio"]
+    configs["Motor"]["SimulationParameters"]["maxPressure"] = entryVals["Max Pressure - Pa"]
+    configs["Motor"]["SimulationParameters"]["maxMassFlux"] = entryVals["Max Mass Flux - kg/(m^2*s)"]
+    configs["Motor"]["SimulationParameters"]["maxMachNumber"] = entryVals["Max Mach Number"]
+    configs["Motor"]["SimulationParameters"]["minPortThroat"] = entryVals["Min Port Throat Ratio"]
+    configs["Motor"]["SimulationParameters"]["flowSeparationWarnPercent"] = entryVals["Flow Separation Precent - 0.##"]
+    configs["Motor"]["SimulationBehavior"]["burnoutWebThres"] = entryVals["Burnout Web Threshold - m"]
+    configs["Motor"]["SimulationBehavior"]["burnoutThrustThres"] = entryVals["Burnout Thrust Threshold"]
+    configs["Motor"]["SimulationBehavior"]["timestep"] = entryVals["Time step - s"]
+    configs["Motor"]["SimulationBehavior"]["ambPressure"] = entryVals["Ambient Pressure - Pa"]
+    configs["Motor"]["SimulationBehavior"]["mapDim"] = entryVals["Grain Map Dimension"]
+    configs["Motor"]["SimulationBehavior"]["sepPressureRatio"] = entryVals["Separation Pressure Ratio"]
+
 
 def configureNIDict(entryVals):
   configs["Nozzle"] = {}
