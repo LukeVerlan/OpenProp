@@ -30,19 +30,8 @@
             "diameter" : 0.1397,
             "length" : 0.4064,
             "inhibitedEnds" : "Neither"
-        },      
+        }   
 
-        {
-            "type" : "FINOCYL",
-            "coreDiameter" : 0.0508,
-            "diameter" : 0.1397,
-            "length" : 0.4064,
-            "numFins" : 4,
-            "finLength" : 0.01,
-            "finWidth" : 0.01,
-            "invertedFins" : false,
-            "inhibitedEnds" : "Neither"
-        }
     ],
 
     "Nozzle": {

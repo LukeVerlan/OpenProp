@@ -1,0 +1,80 @@
+{
+    "Motor": {
+        "SimulationParameters": {
+            "maxPressure": 10000000,
+            "maxMassFlux": 1406,
+            "maxMachNumber": 0.8,
+            "minPortThroat": 2,
+            "flowSeparationWarnPercent": 0.15
+        },
+        "SimulationBehavior": {
+            "burnoutWebThres": 2.5e-05,
+            "burnoutThrustThres": 0.001,
+            "timestep": 0.03,
+            "ambPressure": 101325,
+            "mapDim": 500,
+            "sepPressureRatio": 0.3
+        }
+    },
+    "Grains": [
+        {
+            "type": "BATES",
+            "coreDiameter": 0.0508,
+            "diameter": 0.1397,
+            "length": 0.4064,
+            "inhibitedEnds": "Neither"
+        },
+        {
+            "type": "BATES",
+            "coreDiameter": 0.0508,
+            "diameter": 0.1397,
+            "length": 0.4064,
+            "inhibitedEnds": "Neither"
+        },
+        {
+            "type": "FINOCYL",
+            "coreDiameter": 0.0508,
+            "diameter": 0.1397,
+            "length": 0.4064,
+            "numFins": 4,
+            "finLength": 0.01,
+            "finWidth": 0.01,
+            "invertedFins": false,
+            "inhibitedEnds": "Neither"
+        }
+    ],
+    "Nozzle": {
+        "minDia": 0.02,
+        "maxDia": 0.05,
+        "minLen": 0.015,
+        "maxLen": 0.03,
+        "exitHalf": 15,
+        "exitDia": 0.11684,
+        "SlagCoef": 0,
+        "ErosionCoef": 0,
+        "Efficiency": 0.98,
+        "nozzleDia": 0.130048,
+        "nozzleLength": 0.189484,
+        "minHalfConv": 45,
+        "maxHalfConv": 75,
+        "preference": "ISP",
+        "iteration_step_size": 0.001,
+        "parallel_mode": true,
+        "iteration_threads": 8
+    },
+    "Propellant": {
+        "name": "Purple Lightning",
+        "density": 1666.32985,
+        "tabs": [
+            {
+                "maxPressure": 68950000,
+                "minPressure": 0,
+                "a": 6e-05,
+                "n": 0.289,
+                "k": 1.2384,
+                "t": 2185,
+                "m": 23.55
+            }
+        ]
+    }
+}
