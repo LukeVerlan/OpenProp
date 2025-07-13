@@ -51,7 +51,7 @@ def configureNIDict(configs,entryVals):
 
 def configureGrainDict(configs, entryVals, type):
 
-  if "Grains" in configs and configs["Grains"] is not None:
+  if "Grains" not in configs:
     configs["Grains"] = []
 
   configs["Grains"].append({})

@@ -2,6 +2,21 @@ import tkinter as tk
 from tkinter import ttk
 import configureDictionaries
 
+
+def clearWidgetColumn(frame, col):
+  for widget in frame.winfo_children():
+    info = widget.grid_info()
+    if 'column' in info and info['column'] == col:
+      widget.destroy()
+
+def clear(frame):
+
+  for widget in frame.winfo_children():
+      widget.destroy()
+
+  return frame
+
+
 def createSettingsPage(configs, labelName, fields, popup, dropDown):
 
   frame = createBaseFrame(popup)

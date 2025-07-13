@@ -1,3 +1,3 @@
-from motorlib.grains.finocyl import Finocyl
+import tkinter as tk
 
-print(Finocyl.__bases__)
+print(dir(tk.Frame))
