@@ -57,9 +57,6 @@ def hasConfigs(config, type):
         
     return all(key in config for key in required_keys)
 
-
-        
-
 def cfgToJson(cfg,frame):
     # Prompt user to select save location
     file_path = fd.asksaveasfilename(

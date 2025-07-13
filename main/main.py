@@ -139,16 +139,16 @@ def handleCreateConfig(gui):
   OMConfigLabel = tk.Button(optionsFrame, text="Create OpenMotor settings config",command=lambda: createOMsettings(popup))
   OMConfigLabel.grid(row=3,column=0,sticky='nsew', pady=2)
   
-  propUploadLabel = tk.Button(optionsFrame, text="Upload Propellant config",command=lambda: uploadPropellant(popup))
+  propUploadLabel = tk.Button(optionsFrame, text="Upload Propellant config",command=lambda:FileUpload.uploadConfig(popup, 'Propellant'))
   propUploadLabel.grid(row=4,column=0,sticky='nsew', pady=2)
 
-  grainUploadLabel = tk.Button(optionsFrame, text="Upload Grain config",command=lambda: uploadGrainGeometry(popup))
+  grainUploadLabel = tk.Button(optionsFrame, text="Upload Grain config",command=lambda: FileUpload.uploadConfig(popup, 'Grains'))
   grainUploadLabel.grid(row=5,column=0,sticky='nsew', pady=2)
 
-  NIUploadLabel = tk.Button(optionsFrame, text="Upload Nozzle Iterator Config",command=lambda: uploadNozzleIterator(popup))
+  NIUploadLabel = tk.Button(optionsFrame, text="Upload Nozzle Iterator Config",command=lambda: FileUpload.uploadConfig(popup, 'Nozzle'))
   NIUploadLabel.grid(row=6,column=0,sticky='nsew', pady=2)
 
-  OMCUploadLabel = tk.Button(optionsFrame, text="Uplaod Open Motor config",command=lambda: uploadOMsettings(popup))
+  OMCUploadLabel = tk.Button(optionsFrame, text="Uplaod Open Motor config",command=lambda:FileUpload.uploadConfig(popup, 'Motor'))
   OMCUploadLabel.grid(row=7,column=0,sticky='nsew', pady=2)
   
   preSavedConfigLabel = tk.Button(optionsFrame, text="Upload complete preset",command=lambda: FileUpload.uploadConfig(popup, 'All'))
