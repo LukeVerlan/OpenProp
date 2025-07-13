@@ -151,7 +151,7 @@ def handleCreateConfig(gui):
   OMCUploadLabel = tk.Button(optionsFrame, text="Uplaod Open Motor config",command=lambda: uploadOMsettings(popup))
   OMCUploadLabel.grid(row=7,column=0,sticky='nsew', pady=2)
   
-  preSavedConfigLabel = tk.Button(optionsFrame, text="Upload complete preset",command=lambda: FileUpload.uploadCompleteConfig(popup))
+  preSavedConfigLabel = tk.Button(optionsFrame, text="Upload complete preset",command=lambda: FileUpload.uploadConfig(popup, 'All'))
   preSavedConfigLabel.grid(row=8,column=0,sticky='nsew', pady=2)
 
   savedConfigs = tk.Button(optionsFrame, text="Save Current Configs",command=lambda: saveCurrentConfigs(popup))

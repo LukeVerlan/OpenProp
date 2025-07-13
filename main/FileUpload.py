@@ -3,13 +3,13 @@ import json
 import tkinter as tk
 import guiFunction
 
-def uploadCompleteConfig(popup):
+def uploadConfig(popup, type):
 
   labelFrame = guiFunction.createLabelFrame(popup, "Upload Complete config")
 
   frame = guiFunction.createBaseFrame(popup)
 
-  uploadButton = tk.Button(frame, text='Upload', command=lambda:commitConfig(frame, 'All'))
+  uploadButton = tk.Button(frame, text='Upload', command=lambda:commitConfig(frame, type))
   uploadButton.grid(row=0,column=0)
 
 def commitConfig(configs, frame, type):
@@ -20,12 +20,12 @@ def commitConfig(configs, frame, type):
     validLabel = tk.Label(frame, text="Valid Config")
     invalidLabel = tk.Label(frame, text="Invalid Config")
 
-    if type == 'All':
-        if has_all_top_configs(config):
-            validLabel.grid(row=0, column=1)
-            addToConfigs(config, type)
-        else:
-            invalidLabel.grid(row=0, column=1)
+    if hasConfigs(config, type):
+        validLabel.grid(row=0, column=1)
+        addToConfigs(configs, config, type)
+    else:
+        invalidLabel.grid(row=0, column=1)
+
 
 def addToConfigs(configs, config, type):
 
@@ -34,10 +34,31 @@ def addToConfigs(configs, config, type):
     configs["Motor"] = config["Motor"]
     configs["Nozzle"] = config["Nozzle"]
     configs["Propellant"] = config["Propellant"]
+  elif type == 'Grains':
+    configs['Grains'] = config["Grains"]
+  elif type == 'Motor':
+    configs['Motor'] = config['Motor']
+  elif type == 'Nozzle':
+    configs['Nozzle'] = config['Nozzle']
+  elif type == 'Propellant':
+    configs['Propellant'] = config['Propellant']
 
-def has_all_top_configs(config):
-    required_keys = ["Propellant", "Grains", "Nozzle", "Motor"]
+def hasConfigs(config, type):
+    if type == 'All':
+        required_keys = ["Propellant", "Grains", "Motor", "Nozzle"]
+    elif type == 'Grains':
+        required_keys = ["Grains"]
+    elif type == 'Propellant':
+        required_keys = ["Propellant"]
+    elif type == 'Nozzle':
+        required_keys = ['Nozzle']
+    elif type == 'Motor':
+        required_keys = ['Motor']
+        
     return all(key in config for key in required_keys)
+
+
+        
 
 def cfgToJson(cfg,frame):
     # Prompt user to select save location
