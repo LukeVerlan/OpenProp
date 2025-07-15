@@ -139,23 +139,35 @@ def handleCreateConfig(gui):
   OMConfigLabel = tk.Button(optionsFrame, text="Create OpenMotor settings config",command=lambda: createOMsettings(popup))
   OMConfigLabel.grid(row=3,column=0,sticky='nsew', pady=2)
   
-  propUploadLabel = tk.Button(optionsFrame, text="Upload Propellant config",command=lambda:FileUpload.uploadConfig(popup, 'Propellant'))
+  propUploadLabel = tk.Button(optionsFrame, text="Upload Propellant config",command=lambda:FileUpload.uploadConfig(popup, configs, 'Propellant'))
   propUploadLabel.grid(row=4,column=0,sticky='nsew', pady=2)
 
-  grainUploadLabel = tk.Button(optionsFrame, text="Upload Grain config",command=lambda: FileUpload.uploadConfig(popup, 'Grains'))
+  grainUploadLabel = tk.Button(optionsFrame, text="Upload Grain config",command=lambda: FileUpload.uploadConfig(popup, configs,'Grains'))
   grainUploadLabel.grid(row=5,column=0,sticky='nsew', pady=2)
 
-  NIUploadLabel = tk.Button(optionsFrame, text="Upload Nozzle Iterator Config",command=lambda: FileUpload.uploadConfig(popup, 'Nozzle'))
+  NIUploadLabel = tk.Button(optionsFrame, text="Upload Nozzle Iterator Config",command=lambda: FileUpload.uploadConfig(popup, configs, 'Nozzle'))
   NIUploadLabel.grid(row=6,column=0,sticky='nsew', pady=2)
 
-  OMCUploadLabel = tk.Button(optionsFrame, text="Uplaod Open Motor config",command=lambda:FileUpload.uploadConfig(popup, 'Motor'))
+  OMCUploadLabel = tk.Button(optionsFrame, text="Uplaod Open Motor config",command=lambda:FileUpload.uploadConfig(popup, configs, 'Motor'))
   OMCUploadLabel.grid(row=7,column=0,sticky='nsew', pady=2)
   
-  preSavedConfigLabel = tk.Button(optionsFrame, text="Upload complete preset",command=lambda: FileUpload.uploadConfig(popup, 'All'))
+  preSavedConfigLabel = tk.Button(optionsFrame, text="Upload complete preset",command=lambda: FileUpload.uploadConfig(popup, configs, 'All'))
   preSavedConfigLabel.grid(row=8,column=0,sticky='nsew', pady=2)
 
-  savedConfigs = tk.Button(optionsFrame, text="Save Current Configs",command=lambda: saveCurrentConfigs(popup))
-  savedConfigs.grid(row=9,column=0,sticky='nsew', pady=2)
+  propSaveLabel = tk.Button(optionsFrame, text="Save Propellant config",command=lambda: saveCurrentConfigs(popup, 'Propellant'))
+  propSaveLabel.grid(row=9,column=0,sticky='nsew', pady=2)
+
+  grainSaveLabel = tk.Button(optionsFrame, text="Save Grain config",command=lambda: saveCurrentConfigs(popup, 'Grains'))
+  grainSaveLabel.grid(row=10,column=0,sticky='nsew', pady=2)
+
+  NIUSaveLabel = tk.Button(optionsFrame, text="Save Nozzle Iterator Config",command=lambda: saveCurrentConfigs(popup, 'Nozzle'))
+  NIUSaveLabel.grid(row=11,column=0,sticky='nsew', pady=2)
+
+  OMSaveLabel = tk.Button(optionsFrame, text="Save Open Motor config",command=lambda: saveCurrentConfigs(popup, 'Motor'))
+  OMSaveLabel.grid(row=12,column=0,sticky='nsew', pady=2)
+
+  saveConfigs = tk.Button(optionsFrame, text="Save All Current Configs",command=lambda: saveCurrentConfigs(popup, 'All'))
+  saveConfigs.grid(row=13,column=0,sticky='nsew', pady=2)
 
 def createPropellant(popup):
   guiFunction.clearWidgetColumn(popup, 1)
@@ -200,6 +212,34 @@ def createNozzleIterator(popup):
   
   guiFunction.createSettingsPage(configs,labelName, fields, popup, dropDown)
 
+  
+def saveCurrentConfigs(popup, type):
+
+  guiFunction.clearWidgetColumn(popup, 1)
+
+  guiFunction.createLabelFrame(popup, "Save " + type + " Settings")
+  frame = guiFunction.createBaseFrame(popup)
+  
+  frame.rowconfigure(0,weight=1)
+
+  if FileUpload.hasConfigs(configs, type):
+    if type == 'All':
+      cfg = configs
+    elif type == 'Grains': 
+      cfg = configs['Grains']
+    elif type == 'Propellant':
+      cfg = configs['Propellant']
+
+    elif type == 'Motor':
+      cfg = configs['Motor']
+    elif type == 'Nozzle':
+      cfg = configs['Nozzle']
+
+    saveButton = tk.Button(frame, text='Save', command=lambda:FileUpload.cfgToJson(cfg, frame))
+    saveButton.grid(row=0,column=0, sticky="ew")
+  else:
+    invalidLabel = tk.Label(frame,text= type + " Config Not Found")
+    invalidLabel.grid(row=0, column=0, sticky='ew')
 
 def createGrainGeometry(popup):
   guiFunction.clearWidgetColumn(popup, 1)
@@ -241,6 +281,8 @@ def createGrainGeometry(popup):
 
     
 def addGrains(frame, refreshCall):
+
+  frame = guiFunction.clear(frame)
 
   grainSelectFrame = tk.Frame(frame)
   grainSelectFrame.grid(row=0,column=0,sticky='nsew')
@@ -289,15 +331,42 @@ def addGrainWindow(frame, type, refreshCall):
                         borderwidth=1, relief="solid")
   
   saveButton.grid(row=8,column=5, padx=4, pady=4, sticky = 'se')
+
+def viewGrains(functionFrame):
+
+  functionFrame = guiFunction.clear(functionFrame)
+
+  num_grains = len(configs['Grains'])
+  for i in range(num_grains):
+    functionFrame.columnconfigure(i, weight=1)
+
+  guidanceLabel = tk.Label(
+        functionFrame,
+        text="Grains closest to the nozzle are listed first, grains furthest from the nozzle are listed last"
+    )
+  guidanceLabel.grid(row=0, column=0, columnspan=num_grains, sticky='ew')
+
+  row = 1
+  column = 0
+  grainCounter = 0
+
+  for grain in configs['Grains']:
+    if column == 4:
+      column = 0
+      row += 1  
+    
+    grainString = 'Grain ' + str(grainCounter) + ': \n'
+    grainCounter += 1
+    for key, value in grain.items():
+      grainString += f"{key}: {value}, \n"
+    
+    grainLabel = tk.Label(functionFrame, text=grainString[:-2])  # Remove the last comma and space
+    grainLabel.grid(row=row, column=column, sticky='nsew')
+
+    column += 1
+
   
-def saveCurrentConfigs(popup):
-
-  guiFunction.createLabelFrame(popup, "Save Settings")
-  frame = guiFunction.createBaseFrame(popup)
-
-  saveButton = tk.Button(frame, text='Save', command=lambda:FileUpload.cfgToJson(configs,frame))
-  saveButton.grid(row=0,column=0)
   
-
 if __name__ == '__main__':
   main()
+

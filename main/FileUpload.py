@@ -3,14 +3,15 @@ import json
 import tkinter as tk
 import guiFunction
 
-def uploadConfig(popup, type):
+def uploadConfig(popup, configs, type):
+	
+		guiFunction.clearWidgetColumn(popup,1)
+		guiFunction.createLabelFrame(popup, "Upload " + type + " config")
 
-  labelFrame = guiFunction.createLabelFrame(popup, "Upload Complete config")
+		frame = guiFunction.createBaseFrame(popup)
 
-  frame = guiFunction.createBaseFrame(popup)
-
-  uploadButton = tk.Button(frame, text='Upload', command=lambda:commitConfig(frame, type))
-  uploadButton.grid(row=0,column=0)
+		uploadButton = tk.Button(frame, text='Upload', command=lambda:commitConfig(configs, frame, type))
+		uploadButton.grid(row=0,column=0)
 
 def commitConfig(configs, frame, type):
     configPath = fd.askopenfilename()
@@ -23,6 +24,7 @@ def commitConfig(configs, frame, type):
     if hasConfigs(config, type):
         validLabel.grid(row=0, column=1)
         addToConfigs(configs, config, type)
+        print(configs)
     else:
         invalidLabel.grid(row=0, column=1)
 

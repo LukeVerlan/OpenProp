@@ -24,7 +24,6 @@ from motorlib.motor import Motor
 # Python libraries
 import json
 import math
-import copy
 import time
 
 # Custom Classes
