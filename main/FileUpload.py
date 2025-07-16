@@ -3,6 +3,10 @@ import json
 import tkinter as tk
 import guiFunction
 
+# @brief Uploads a configuration file and updates the configs dictionary.
+# @param popup The popup window where the upload button is located.
+# @param configs The dictionary containing the current configurations.
+# @param type The type of configuration being uploaded (e.g., 'All', 'Grains', 'Motor', 'Nozzle', 'Propellant').
 def uploadConfig(popup, configs, type):
 	
 		guiFunction.clearWidgetColumn(popup,1)
@@ -13,6 +17,10 @@ def uploadConfig(popup, configs, type):
 		uploadButton = tk.Button(frame, text='Upload', command=lambda:commitConfig(configs, frame, type))
 		uploadButton.grid(row=0,column=0)
 
+# @brief Commits the configuration from a file to the configs dictionary.
+# @param configs The dictionary containing the current configurations.
+# @param frame The frame where the upload button is located.
+# @param type The type of configuration being uploaded (e.g., 'All', 'Grains', 'Motor', 'Nozzle', 'Propellant').
 def commitConfig(configs, frame, type):
     configPath = fd.askopenfilename()
     with open(configPath, "r") as f:
@@ -28,7 +36,10 @@ def commitConfig(configs, frame, type):
     else:
         invalidLabel.grid(row=0, column=1)
 
-
+# @brief Adds the configuration from the uploaded file to the configs dictionary.
+# @param configs The dictionary containing the current configurations.
+# @param config The configuration dictionary loaded from the file.
+# @param type The type of configuration being uploaded (e.g., 'All', 'Grains', 'Motor', 'Nozzle', 'Propellant').
 def addToConfigs(configs, config, type):
 
   if type == 'All':
@@ -45,6 +56,10 @@ def addToConfigs(configs, config, type):
   elif type == 'Propellant':
     configs['Propellant'] = config['Propellant']
 
+# @brief Checks if the configuration dictionary has the required keys for the specified type.
+# @param config The configuration dictionary to check.
+# @param type The type of configuration being checked (e.g., 'All', 'Grains', 'Motor', 'Nozzle', 'Propellant').
+# @return True if the configuration dictionary has the required keys, False otherwise.
 def hasConfigs(config, type):
     if type == 'All':
         required_keys = ["Propellant", "Grains", "Motor", "Nozzle"]
@@ -59,6 +74,9 @@ def hasConfigs(config, type):
         
     return all(key in config for key in required_keys)
 
+# @brief Converts the configuration dictionary to a JSON file and prompts the user to save it.
+# @param cfg The configuration dictionary to convert.
+# @param frame The frame where the save button is located.
 def cfgToJson(cfg,frame):
     # Prompt user to select save location
     file_path = fd.asksaveasfilename(

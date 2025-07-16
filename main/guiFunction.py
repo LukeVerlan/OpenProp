@@ -2,13 +2,18 @@ import tkinter as tk
 from tkinter import ttk
 import configureDictionaries
 
-
+# @brief Clears all widgets in a specific column of the given frame.
+# @param frame The frame from which widgets will be cleared.
+# @param col The column index from which widgets will be cleared.
 def clearWidgetColumn(frame, col):
   for widget in frame.winfo_children():
     info = widget.grid_info()
     if 'column' in info and info['column'] == col:
       widget.destroy()
 
+# @brief Clears all widgets in the given frame.
+# @param frame The frame from which all widgets will be cleared.  
+# @return The cleared frame.
 def clear(frame):
 
   for widget in frame.winfo_children():
@@ -16,19 +21,28 @@ def clear(frame):
 
   return frame
 
-
-def createSettingsPage(configs, labelName, fields, popup, dropDown):
+# @brief Creates a settings page with labeled entry boxes and a save button.
+# @param configs The dictionary containing the current configurations.
+# @param labelName The name of the settings page.
+# @param fields A list of field names for the entry boxes.
+# @param popup The popup window where the settings page will be created.
+# @param dropDown Optional dictionary for dropdown menus.
+# @param defaults Optional dictionary for default values in the entry boxes.
+def createSettingsPage(configs, labelName, fields, popup, dropDown=None, defaults=None):
 
   frame = createBaseFrame(popup)
-  labelFrame = createLabelFrame(popup,labelName)
+  createLabelFrame(popup,labelName)
 
-  entries = createLabledEntryBoxes(frame, fields, dropDown)
+  entries = createLabledEntryBoxes(frame, fields, dropDown, defaults)
 
   saveButton = tk.Button(frame, text="Save Config", command=lambda: saveEntries(configs, entries,labelName, None),
                         borderwidth=1, relief="solid")
   
   saveButton.grid(row=8,column=5, padx=4, pady=4, sticky = 'se')
 
+# @brief Creates a base frame for the settings page.
+# @param popup The popup window where the base frame will be created.
+# @return The created base frame.
 def createBaseFrame(popup):
 
   frame = tk.Frame(popup, borderwidth=1, relief="solid")
@@ -39,6 +53,10 @@ def createBaseFrame(popup):
 
   return frame
 
+# @brief Creates a labeled frame in the popup window.
+# @param popup The popup window where the labeled frame will be created.
+# @param labelName The name of the labeled frame.
+# @return The created labeled frame.
 def createLabelFrame(popup, labelName):
 
   labelFrame = tk.Frame(popup, borderwidth=1, relief="solid")
@@ -51,7 +69,13 @@ def createLabelFrame(popup, labelName):
 
   return labelFrame
 
-def createLabledEntryBoxes(parent, fields, dropDown):
+# @brief Creates labeled entry boxes in the given parent frame.
+# @param parent The parent frame where the entry boxes will be created.
+# @param fields A list of field names for the entry boxes.
+# @param dropDown Optional dictionary for dropdown menus.
+# @param defaults Optional dictionary for default values in the entry boxes.
+# @return A dictionary containing the created entry boxes and dropdown menus.
+def createLabledEntryBoxes(parent, fields, dropDown=None, defaults=None):
 
   entries = {}
   j = 1
@@ -68,6 +92,10 @@ def createLabledEntryBoxes(parent, fields, dropDown):
     label.grid(row=j,column=i,sticky='nsew', padx=14, pady=6)
 
     entry = tk.Entry(parent)
+
+    if defaults and field in defaults:
+      entry.insert(0, str(defaults[field]))
+
     entry.grid(row=j+1, column=i, sticky='nsew', padx=14, pady=4)
     
     entries[field] = entry
@@ -79,7 +107,14 @@ def createLabledEntryBoxes(parent, fields, dropDown):
 
         comboBox = ttk.Combobox(parent, values=dropDown[key])
         comboBox.grid(row=j+1,column=i+1,sticky='nsew', padx=14, pady=6)
-        comboBox.set("Select Preference")
+        if defaults and key in defaults:
+          val = defaults[key]
+          if isinstance(val, bool):
+            comboBox.set("True" if val else "False")
+          else:
+            comboBox.set(str(val))
+        else:
+          comboBox.set("Select Preferece")
 
         i+=1 
 
@@ -89,6 +124,11 @@ def createLabledEntryBoxes(parent, fields, dropDown):
 
   return entries
 
+# @brief Saves the entries from the entry boxes to the configs dictionary.
+# @param configs The dictionary containing the current configurations.
+# @param entries The dictionary containing the entry boxes.
+# @param configName The name of the configuration being saved.
+# @param type The type of configuration being saved (e.g., 'Grains', 'Motor', 'Nozzle', 'Propellant').
 def saveEntries(configs, entries, configName, type):
     
     entryVals = {}

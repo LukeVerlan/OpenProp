@@ -1,5 +1,6 @@
-
-
+# @breif Configures the propellant dictionary with the given entry values.
+# @param configs The dictionary containing the current configurations.
+# @param entryVals The dictionary containing the entry values for the propellant configuration.
 def configurePropellantDict(configs, entryVals):
     configs["Propellant"] = {}
     configs["Propellant"]["name"] = entryVals["Propellant Name"]
@@ -14,7 +15,9 @@ def configurePropellantDict(configs, entryVals):
         "m": entryVals["Exhaust Molar Mass - g/mol"]
     }]
 
-
+# @brief Configures the motor dictionary with the given entry values.
+# @param configs The dictionary containing the current configurations.
+# @param entryVals The dictionary containing the entry values for the motor configuration.
 def configureOMDict(configs,entryVals):
     configs["Motor"]["SimulationParameters"]["maxPressure"] = entryVals["Max Pressure - Pa"]
     configs["Motor"]["SimulationParameters"]["maxMassFlux"] = entryVals["Max Mass Flux - kg/(m^2*s)"]
@@ -28,7 +31,10 @@ def configureOMDict(configs,entryVals):
     configs["Motor"]["SimulationBehavior"]["mapDim"] = entryVals["Grain Map Dimension"]
     configs["Motor"]["SimulationBehavior"]["sepPressureRatio"] = entryVals["Separation Pressure Ratio"]
 
-
+# @brief Configures the nozzle iterator dictionary with the given entry values.
+# @param configs The dictionary containing the current configurations.
+# @param entryVals The dictionary containing the entry values for the nozzle iterator configuration.
+# @note This function sets various parameters related to the nozzle design and simulation.
 def configureNIDict(configs,entryVals):
   configs["Nozzle"] = {}
   configs["Nozzle"]["minDia"] = entryVals["Min Throat Diameter - m"]
@@ -49,6 +55,10 @@ def configureNIDict(configs,entryVals):
   configs["Nozzle"]["parallel_mode"] = entryVals["Parallel Simulation (Harder on computer)"]
   configs["Nozzle"]["iteration_threads"] = entryVals[" # Threads to allocate for simulation"]
 
+# @brief Configures the grain dictionary with the given entry values.
+# @param configs The dictionary containing the current configurations.
+# @param entryVals The dictionary containing the entry values for the grain configuration.
+# @param type The type of grain being configured (e.g., 'FINOCYL', 'BATES')
 def configureGrainDict(configs, entryVals, type):
 
   if "Grains" not in configs:
