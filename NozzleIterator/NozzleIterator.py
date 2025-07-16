@@ -18,13 +18,12 @@ if repo_root not in sys.path:
 from motorlib.propellant import Propellant
 from motorlib.grains.bates import BatesGrain
 from motorlib.grains.finocyl import Finocyl
-from motorlib.nozzle import Nozzle
 from motorlib.motor import Motor
 
 # Python libraries
-import json
 import math
 import time
+import json
 
 # Custom Classes
 from NozzleIterator.ConfigWrapper import ConfigWrapper
@@ -48,32 +47,31 @@ def main():
 
   # Parses command line arguments, nessecary for integrating with main
   parser = argparse.ArgumentParser(description="Nozzle config parser") # create cmd parser 
-  parser.add_argument("config_path", help="Path to the config JSON file") # grab configfilepath
+  parser.add_argument("config", help="Path to the config JSON file") # grab configfilepath
   args = parser.parse_args() # Parse those arguments
-  configFile = args.config_path # give me the file at the end of that directory
+  jsonFile = args.config # give me the file at the end of that directory
 
-  with open(configFile, 'r') as file:
-    propConfig = json.load(file)
-  
-  motor = setupProp(propConfig)
+  configFile = json.loads(jsonFile) # Load the config file as a json object
+
+  motor = setupProp(configFile)
 
   # From config or CLI
-  parallel_mode = propConfig.get("parallel_mode", True)
-  max_threads = propConfig.get("iteration_threads", None)
+  parallel_mode = configFile.get("parallel_mode", True)
+  max_threads = configFile.get("iteration_threads", None)
 
-  bestConfiguration = iteration(propConfig["Nozzle"], motor, max_threads, parallel_mode)
+  bestConfiguration = iteration(configFile["Nozzle"], motor, max_threads, parallel_mode)
 
   (simRes, nozzle) = bestConfiguration
   iterationResult(simRes, nozzle)
 
 # Brief - Parse the configuration files
 # Parameters - config file 
-def setupProp(propConfig):
-    prop = Propellant(propConfig["Propellant"])
+def setupProp(configFile):
+    prop = Propellant(configFile["Propellant"])
 
     localGrains = []
 
-    for grain_cfg in propConfig["Grains"]:
+    for grain_cfg in configFile["Grains"]:
         grain_type = grain_cfg["type"]
 
         if grain_type == "BATES":
@@ -97,7 +95,7 @@ def setupProp(propConfig):
     motor = Motor()
     
     # Combine simulation parameters and behavior dicts
-    combined_config = propConfig['Motor']["SimulationParameters"] | propConfig['Motor']["SimulationBehavior"]
+    combined_config = configFile['Motor']["SimulationParameters"] | configFile['Motor']["SimulationBehavior"]
     
     # Wrap combined_config in ConfigWrapper
     motor.config = ConfigWrapper(combined_config)
@@ -118,7 +116,7 @@ def iteration(nozzleConfig, motor, max_threads=None, parallel_mode=True):
     throatLength_vals = frange(nozzleConfig["minLen"], nozzleConfig["maxLen"], stepSize)
     combinations = list(product(throat_vals, throatLength_vals))
 
-    print(f"\n🔁 Preparing {len(combinations)} simulations...")
+    print(f"\nPreparing {len(combinations)} simulations...")
     start_time = time.perf_counter()
 
     # Fallback container
@@ -153,11 +151,11 @@ def iteration(nozzleConfig, motor, max_threads=None, parallel_mode=True):
             bestNozzle = nozzle
 
     elapsed_time = time.perf_counter() - start_time
-    print(f"\n✅ Completed {len(results)} successful simulations in {elapsed_time:.2f} seconds")
+    print(f"\nCompleted {len(results)} successful simulations in {elapsed_time:.2f} seconds")
     return bestSim, bestNozzle
 
 def run_simulations_sequentially(combinations, nozzleConfig, motor):
-    print("🧱 Running sequentially (1 core)...")
+    print("Running sequentially (1 core)...")
     results = []
     for throat, throatLen in combinations:
         result = simulate_point(throat, throatLen, nozzleConfig, motor)
