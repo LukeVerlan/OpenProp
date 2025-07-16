@@ -193,8 +193,23 @@ def createPropellant(popup):
             "Burn Rate Coefficient - m/(s*Pa^n)" , "Burn Rate Exponent", "Specific Heat Ratio",
             "Combustion Temperature - K", "Exhaust Molar Mass - g/mol"
             ]
+  
+  if "Propellant" in configs and configs["Propellant"] is not None:
+    defaults = {
+        "Propellant Name": configs["Propellant"].get("name", ""),
+        "Density - Kg/m^3": configs["Propellant"].get("density", ""),
+        "Max Pressure - Pa": configs["Propellant"]["tabs"][0].get("maxPressure", ""),
+        "Min Pressure - Pa": configs["Propellant"]["tabs"][0].get("minPressure", ""),
+        "Burn Rate Coefficient - m/(s*Pa^n)": configs["Propellant"]["tabs"][0].get("a", ""),
+        "Burn Rate Exponent": configs["Propellant"]["tabs"][0].get("n", ""),
+        "Specific Heat Ratio": configs["Propellant"]["tabs"][0].get("k", ""),
+        "Combustion Temperature - K": configs["Propellant"]["tabs"][0].get("t", ""),
+        "Exhaust Molar Mass - g/mol": configs["Propellant"]["tabs"][0].get("m", "")
+    }
+  else:
+    defaults = None
     
-  guiFunction.createSettingsPage(configs,labelName, fields, popup, dropDown)
+  guiFunction.createSettingsPage(configs,labelName, fields, popup, dropDown, defaults)
 
 # @Brief Creates the OpenMotor settings configuration GUI
 # @param popup - The popup window where the OpenMotor settings configuration will be created
@@ -209,7 +224,24 @@ def createOMsettings(popup):
             "Ambient Pressure - Pa", "Grain Map Dimension", "Separation Pressure Ratio" 
             ]
   
-  guiFunction.createSettingsPage(configs,labelName, fields, popup, dropDown)
+  if "Motor" in configs and configs["Motor"] is not None:
+    defaults = {
+        "Max Pressure - Pa": configs["Motor"]["SimulationParameters"].get("maxPressure", ""),
+        "Max Mass Flux - kg/(m^2*s)": configs["Motor"]["SimulationParameters"].get("maxMassFlux", ""),
+        "Max Mach Number": configs["Motor"]["SimulationParameters"].get("maxMachNumber", ""),
+        "Min Port Throat Ratio": configs["Motor"]["SimulationParameters"].get("minPortThroat", ""),
+        "Flow Separation Precent - 0.##": configs["Motor"]["SimulationParameters"].get("flowSeparationWarnPercent", ""),
+        "Burnout Web Threshold - m": configs["Motor"]["SimulationBehavior"].get("burnoutWebThres", ""),
+        "Burnout Thrust Threshold": configs["Motor"]["SimulationBehavior"].get("burnoutThrustThres", ""),
+        "Time step - s": configs["Motor"]["SimulationBehavior"].get("timestep", ""),
+        "Ambient Pressure - Pa": configs["Motor"]["SimulationBehavior"].get("ambPressure", ""),
+        "Grain Map Dimension": configs["Motor"]["SimulationBehavior"].get("mapDim", ""),
+        "Separation Pressure Ratio": configs["Motor"]["SimulationBehavior"].get("sepPressureRatio", "")
+    }
+  else:
+    defaults = None
+  
+  guiFunction.createSettingsPage(configs,labelName, fields, popup, dropDown, defaults)
 
 # @Brief Creates the Nozzle Iterator configuration GUI
 # @param popup - The popup window where the Nozzle Iterator configuration will be created
@@ -225,10 +257,32 @@ def createNozzleIterator(popup):
             "Min Throat Diameter - m", "Max Throat Diameter - m", "Min Throat Length - m", "Max Throat Length - m",
             "Exit Half Angle - deg","Slag Coefficient - (m*Pa)/s","Erosion Coefficient - s/(m*Pa)","Efficiency - 0.##",
             "Nozzle Diameter - m", "Nozzle Length - m", "Min Conv Half Angle - deg", "Max Conv Half Angle - deg",
-            "Iteraton Step Size - m", " # Threads to allocate for simulation"
+            "Iteraton Step Size - m", "# Threads to allocate for simulation"
             ]
   
-  guiFunction.createSettingsPage(configs,labelName, fields, popup, dropDown)
+  if "Nozzle" in configs and configs["Nozzle"] is not None:
+    defaults = {
+        "Min Throat Diameter - m": configs["Nozzle"].get("minDia", ""),
+        "Max Throat Diameter - m": configs["Nozzle"].get("maxDia", ""),
+        "Min Throat Length - m": configs["Nozzle"].get("minLen", ""),
+        "Max Throat Length - m": configs["Nozzle"].get("maxLen", ""),
+        "Exit Half Angle - deg": configs["Nozzle"].get("exitHalf", ""),
+        "Slag Coefficient - (m*Pa)/s": configs["Nozzle"].get("SlagCoef", ""),
+        "Erosion Coefficient - s/(m*Pa)": configs["Nozzle"].get("ErosionCoef", ""),
+        "Efficiency - 0.##": configs["Nozzle"].get("Efficiency", ""),
+        "Nozzle Diameter - m": configs["Nozzle"].get("nozzleDia", ""),
+        "Nozzle Length - m": configs["Nozzle"].get("nozzleLength", ""),
+        "Min Conv Half Angle - deg": configs["Nozzle"].get("minHalfConv", ""),
+        "Max Conv Half Angle - deg": configs["Nozzle"].get("maxHalfConv", ""),
+        "Iteraton Step Size - m": configs["Nozzle"].get("iteration_step_size", ""),
+        "# Threads to allocate for simulation": configs["Nozzle"].get("iteration_threads", ""),
+        "Search Preference": configs["Nozzle"].get("preference", ""),
+        "Parallel Simulation (Harder on computer)": configs["Nozzle"].get("parallel_mode", ""),
+    }
+  else:
+    defaults = None
+  
+  guiFunction.createSettingsPage(configs, labelName, fields, popup, dropDown, defaults)
 
 # @Brief Saves the current configurations to a JSON file
 # @param popup - The popup window where the configurations are saved
