@@ -221,9 +221,10 @@ def print_flight_data(flight_data_array, print_interval=2.0):
 
                 next_print_time = math.ceil((current_time + 1e-9) / print_interval) * print_interval
 
-if __name__ == "__main__":
+
+def main(config):
     elevationProps = elevationDepProperties(constants)
-    simulation = SimulationTools(constants, parameters, elevationProps)
+    simulation = SimulationTools(constants, config["ImpulseCalculator"], elevationProps)
     calculator = ImpulseCalculator(simulation)
 
     initial_summary_data, initial_sim_data = calculator.calculate_Impulse_needed()
@@ -237,16 +238,16 @@ if __name__ == "__main__":
 
     #prints all of the information input by the user
     print("Impulse Calculator Inputs:")
-    print(f"Desired apogee: {parameters.desiredApogee:.2f} m")
-    print(f"Rail angle: {parameters.railAngle:.2f} radians")
-    print(f"Launch site elevation: {parameters.launchSiteElevation:.2f} m")
-    print(f"Drag area: {parameters.dragArea:.4f} m^2")
-    print(f"Drag coefficient: {parameters.dragCoefficient:.2f}")
-    print(f"Wind velocity: {parameters.windVelocity:.2f} m/s")
-    print(f"Dry mass: {parameters.noMotorMass:.2f} kg")
-    print(f"Surface pressure: {parameters.surfacePressure:.2f} Pa")
-    print(f"Surface temperature: {parameters.surfaceTemperature:.2f} K")
-    print(f"Delta T: {parameters.deltaT:.2f} s")
+    print(f"Desired apogee: {config["ImpulseCalculator"]["desiredApogee"]:.2f} m")
+    print(f"Rail angle: {config["ImpulseCalculator"]["railAngle"]:.2f} radians")
+    print(f"Launch site elevation: {config["ImpulseCalculator"]["launchSiteElevation"]:.2f} m")
+    print(f"Drag area: {config["ImpulseCalculator"]["dragArea"]:.4f} m^2")
+    print(f"Drag coefficient: {config["ImpulseCalculator"]["dragCoefficient"]:.2f}")
+    print(f"Wind velocity: {config["ImpulseCalculator"]["windVelocity"]:.2f} m/s")
+    print(f"Dry mass: {config["ImpulseCalculator"]["noMotorMass"]:.2f} kg")
+    print(f"Surface pressure: {config["ImpulseCalculator"]["surfacePressure"]:.2f} Pa")
+    print(f"Surface temperature: {config["ImpulseCalculator"]["surfaceTemperature"]:.2f} K")
+    print(f"Delta T: {config["ImpulseCalculator"]["deltaT"]:.2f} s")
     
 
     #prints all of the interesting information from the impulse calculator
@@ -310,3 +311,12 @@ if __name__ == "__main__":
         '''
     else:
         print("\nNo plot data references were collected to display.")
+
+    return plotter
+
+    
+
+
+if __name__ == "__main__":
+
+    main()

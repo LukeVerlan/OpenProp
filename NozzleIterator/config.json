@@ -72,5 +72,26 @@
             "mapDim" : 500,
             "sepPressureRatio" : 0.3
         }
+    },
+
+    "ImpulseCalculator" : {
+        
+        "surfacePressure" : 100948.25, 
+        "surfaceTemperature" : 313.0, 
+        "windVelocity" : -5,
+        "railAngle" : 0.05235,
+        "launchSiteElevation" : 848.0,
+        "dragArea" : 0.0176,
+        "dragCoefficient" : 0.75,
+        "noMotorMass" : 16.64,
+        "specificImpulse" : 2255.495,
+        "desiredApogee" : 3048.0,
+        "apogeeThreshold" : 0.01,
+        "burnTimeRange" : 0.4,
+        "burnTimeStep" : 0.1,
+        "minAvgTtW" : 6.0,
+        "bisectionBoundPercDiff" : 0.00001,
+        "deltaT" : 0.05
+        
     }
 }

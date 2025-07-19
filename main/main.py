@@ -30,6 +30,7 @@ import guiFunction
 
 # Tool Files
 from NozzleIterator import NozzleIterator
+from impulseCalc import ImpulseCalculator
 
 # @Breif Main function of OpenProp, initializes the GUI and sets up the main page
 def main(): 
@@ -105,7 +106,7 @@ def main():
   configsFrame = tk.Frame(gui)
   configsFrame.grid(row=0,column=1,sticky="nsew")
 
-  configsFrame.rowconfigure([1, 2, 3, 4,5], weight=1)
+  configsFrame.rowconfigure([1, 2, 3, 4, 5], weight=1)
   configsFrame.columnconfigure(0, weight=1)
 
   configsLabel = tk.Label(configsFrame, text="Settings")
@@ -130,13 +131,13 @@ def NozzleIteratorGUI(gui):
   popup.grab_set()   
 
   popup.geometry("860x720")
-  popup.resizable(False, False)
+  popup.resizable(False, False) #bastard man
 
   labelFrame = tk.Frame(popup, borderwidth=1, relief="solid")
   labelFrame.grid(row=0, column=0, sticky='nsew')
 
-  labelFrame.columnconfigure(0, weight=1)
-  labelFrame.rowconfigure([0,1], weight=1)
+  # labelFrame.columnconfigure(0, weight=1)
+  # labelFrame.rowconfigure([0,1], weight=1)
 
   logoFrame= tk.Frame(popup, borderwidth=1, relief='solid')
   logoFrame.grid(row=1, column=0,sticky='nsw')
@@ -198,7 +199,7 @@ def NozzleIteratorGUI(gui):
         nozzleResults = tk.Label(graphsFrame, text=result.nozzleStatistics(), borderwidth=1, relief='solid')
         nozzleResults.grid(row=3,column=0, sticky='nsew', pady=2, columnspan=2)
       else:
-        # Handle failed criteria
+        # Handle failed criteria like a boss
         pass 
 
   else:
@@ -208,8 +209,70 @@ def NozzleIteratorGUI(gui):
 
   # Create a button to run the Nozzle Iterator
   
+
+def ImpulseCalculatorGUI(gui):
+
+  OPimDir = "main/OpenPropLogo.png"
+  OPim = Image.open(OPimDir)
+  resizedOPim = OPim.resize((200,625))
+  tk_OPim = ImageTk.PhotoImage(resizedOPim)
+
+  popup=tk.Toplevel()
+
+  popup.transient(gui) # Keep it on top of main window
+  popup.grab_set()   
+
+  popup.geometry("860x720")
+  popup.resizable(False, False) #bastard man
+
+  labelFrame = tk.Frame(popup, borderwidth=1, relief="solid")
+  labelFrame.grid(row=0, column=0, sticky='nsew')
+
+  # labelFrame.columnconfigure(0, weight=1)
+  # labelFrame.rowconfigure([0,1], weight=1)
+
+  logoFrame= tk.Frame(popup, borderwidth=1, relief='solid')
+  logoFrame.grid(row=1, column=0,sticky='nsw')
+
+  logoLabel = tk.Label(logoFrame,image=tk_OPim)
+  logoLabel.grid(row=0,column=0, sticky='nsew')
+
+  logoLabel.image = tk_OPim
+
+  graphsFrame = tk.Frame(popup)
+  graphsFrame.grid(row=0, column=1, sticky='nsew',rowspan=2)
+  graphsFrame.rowconfigure([0,1,2,3], weight=1)
+
+  # Create a label for the Nozzle Iterator
+  label = tk.Label(labelFrame, text="Impulse Calculator Configuration")
+  label.grid(row=0, column=0, pady=1, sticky='ew')
+  
+  exitButton = tk.Button(labelFrame, text="exit", command=lambda: (plt.close('all'), popup.destroy()), borderwidth=1, relief='solid')
+  exitButton.grid(row=3,column=0, pady=1, sticky='nsew')
+  
+  if FileUpload.hasConfigs(configs, 'All'):
+    isValidLabel = tk.Label(labelFrame, text="Valid Config Found")
+    isValidLabel.grid(row=1, column=0, pady=2, padx=2, sticky='ew')
+
+    runButton = tk.Button(labelFrame, text="Run Nozzle Iterator",
+                           command= lambda:runImpulseCalcualtor(), borderwidth=1, relief='solid')
+    runButton.grid(row=2,column=0,sticky='nsew')
+
+
+  def runImpulseCalcualtor():
+      runningLabel = tk.Label(graphsFrame, text="Running...")
+      runningLabel.grid(row=0,column=0,sticky='ew', columnspan=2)
+      popup.update()
+
+      NIconfig = copy.deepcopy(configs)
+      jsonNI = json.dumps(NIconfig, indent=4)
+
+      result = ImpulseCalculator.main(jsonNI)
+    
+
 # @Brief Handles the creation of the configuration GUI, allows user to create or upload configs
 # @param gui - The main GUI window
+
 def handleCreateConfig(gui):
   popup = tk.Toplevel(gui)
   
@@ -243,35 +306,44 @@ def handleCreateConfig(gui):
   OMConfigLabel = tk.Button(optionsFrame, text="Create OpenMotor settings config",command=lambda: createOMsettings(popup))
   OMConfigLabel.grid(row=3,column=0,sticky='nsew', pady=2)
   
+  ICConfigLabel = tk.Button(optionsFrame, text="Create Impulse Calculator config",command=lambda: createImpulseCalculator(popup))
+  ICConfigLabel.grid(row=4,column=0,sticky='nsew', pady=2)
+
+  ICUploadLabel = tk.Button(optionsFrame, text="Upload Impulse Calculator config",command=lambda: FileUpload.uploadConfig(popup, configs, 'ImpulseCalculator'))
+  ICUploadLabel.grid(row=5,column=0,sticky='nsew', pady=2)
+
   propUploadLabel = tk.Button(optionsFrame, text="Upload Propellant config",command=lambda:FileUpload.uploadConfig(popup, configs, 'Propellant'))
-  propUploadLabel.grid(row=4,column=0,sticky='nsew', pady=2)
+  propUploadLabel.grid(row=6,column=0,sticky='nsew', pady=2)
 
   grainUploadLabel = tk.Button(optionsFrame, text="Upload Grain config",command=lambda: FileUpload.uploadConfig(popup, configs,'Grains'))
-  grainUploadLabel.grid(row=5,column=0,sticky='nsew', pady=2)
+  grainUploadLabel.grid(row=7,column=0,sticky='nsew', pady=2)
 
   NIUploadLabel = tk.Button(optionsFrame, text="Upload Nozzle Iterator Config",command=lambda: FileUpload.uploadConfig(popup, configs, 'Nozzle'))
-  NIUploadLabel.grid(row=6,column=0,sticky='nsew', pady=2)
+  NIUploadLabel.grid(row=8,column=0,sticky='nsew', pady=2)
 
   OMCUploadLabel = tk.Button(optionsFrame, text="Uplaod Open Motor config",command=lambda:FileUpload.uploadConfig(popup, configs, 'Motor'))
-  OMCUploadLabel.grid(row=7,column=0,sticky='nsew', pady=2)
+  OMCUploadLabel.grid(row=9,column=0,sticky='nsew', pady=2)
   
   preSavedConfigLabel = tk.Button(optionsFrame, text="Upload complete preset",command=lambda: FileUpload.uploadConfig(popup, configs, 'All'))
-  preSavedConfigLabel.grid(row=8,column=0,sticky='nsew', pady=2)
+  preSavedConfigLabel.grid(row=10,column=0,sticky='nsew', pady=2)
 
   propSaveLabel = tk.Button(optionsFrame, text="Save Propellant config",command=lambda: saveCurrentConfigs(popup, 'Propellant'))
-  propSaveLabel.grid(row=9,column=0,sticky='nsew', pady=2)
+  propSaveLabel.grid(row=11,column=0,sticky='nsew', pady=2)
 
   grainSaveLabel = tk.Button(optionsFrame, text="Save Grain config",command=lambda: saveCurrentConfigs(popup, 'Grains'))
-  grainSaveLabel.grid(row=10,column=0,sticky='nsew', pady=2)
+  grainSaveLabel.grid(row=12,column=0,sticky='nsew', pady=2)
 
   NIUSaveLabel = tk.Button(optionsFrame, text="Save Nozzle Iterator Config",command=lambda: saveCurrentConfigs(popup, 'Nozzle'))
-  NIUSaveLabel.grid(row=11,column=0,sticky='nsew', pady=2)
+  NIUSaveLabel.grid(row=13,column=0,sticky='nsew', pady=2)
 
   OMSaveLabel = tk.Button(optionsFrame, text="Save Open Motor config",command=lambda: saveCurrentConfigs(popup, 'Motor'))
-  OMSaveLabel.grid(row=12,column=0,sticky='nsew', pady=2)
+  OMSaveLabel.grid(row=14,column=0,sticky='nsew', pady=2)
 
   saveConfigs = tk.Button(optionsFrame, text="Save All Current Configs",command=lambda: saveCurrentConfigs(popup, 'All'))
-  saveConfigs.grid(row=13,column=0,sticky='nsew', pady=2)
+  saveConfigs.grid(row=15,column=0,sticky='nsew', pady=2)
+
+  ICSaveLabel = tk.Button(optionsFrame, text="Save Impulse Calculator config",command=lambda: saveCurrentConfigs(popup, 'ImpulseCalculator'))
+  ICSaveLabel.grid(row=16,column=0,sticky='nsew', pady=2)
 
 # @Brief Creates the propellant configuration GUI
 # @param popup - The popup window where the propellant configuration will be created
@@ -379,6 +451,37 @@ def createNozzleIterator(popup):
 
 # @Brief Saves the current configurations to a JSON file
 # @param popup - The popup window where the configurations are saved
+
+def createImpulseCalculator(popup):
+  guiFunction.clearWidgetColumn(popup, 1)
+  labelName = "Impulse Calculator Config"
+
+  fields = [
+            "surfacePressure", "surfaceTemperature", "windVelocity", "railAngle", "launchSiteElevation",
+            "dragArea", "dragCoefficient", "noMotorMass", "specificImpulse", "desiredApogee", "apogeeThreshold", 
+            "burnTimeRange", "burnTimeStep", "minAvgTtW", "bisectionBoundPercDiff", "deltaT"
+  ]  
+
+  if "ImpulseCalculator" in configs and configs["ImpulseCalculator"] is not None:
+    defaults = {
+        "Min Throat Diameter - m": configs["Nozzle"].get("minDia", ""),
+        "Max Throat Diameter - m": configs["Nozzle"].get("maxDia", ""),
+        "Min Throat Length - m": configs["Nozzle"].get("minLen", ""),
+        "Max Throat Length - m": configs["Nozzle"].get("maxLen", ""),
+        "Exit Half Angle - deg": configs["Nozzle"].get("exitHalf", ""),
+        "Slag Coefficient - (m*Pa)/s": configs["Nozzle"].get("SlagCoef", ""),
+        "Erosion Coefficient - s/(m*Pa)": configs["Nozzle"].get("ErosionCoef", ""),
+        "Efficiency - 0.##": configs["Nozzle"].get("Efficiency", ""),
+        "Nozzle Diameter - m": configs["Nozzle"].get("nozzleDia", ""),
+        "Nozzle Length - m": configs["Nozzle"].get("nozzleLength", ""),
+        "Min Conv Half Angle - deg": configs["Nozzle"].get("minHalfConv", ""),
+        "Max Conv Half Angle - deg": configs["Nozzle"].get("maxHalfConv", ""),
+        "Iteraton Step Size - m": configs["Nozzle"].get("iteration_step_size", ""),
+        "# Threads to allocate for simulation": configs["Nozzle"].get("iteration_threads", ""),
+        "Search Preference": configs["Nozzle"].get("preference", ""),
+        "Parallel Simulation (Harder on computer)": configs["Nozzle"].get("parallel_mode", ""),
+        "Exit Diameter - m": configs["Nozzle"].get("exitDia", "")
+    }
 def saveCurrentConfigs(popup, type):
 
   guiFunction.clearWidgetColumn(popup, 1)
