@@ -350,7 +350,6 @@ def handleCreateConfig(gui):
 def createPropellant(popup):
   guiFunction.clearWidgetColumn(popup, 1)
   labelName = "Propellant Config"
-  dropDown = None
 
   fields = [
             "Propellant Name", "Density - Kg/m^3", "Max Pressure - Pa", "Min Pressure - Pa",
@@ -373,14 +372,13 @@ def createPropellant(popup):
   else:
     defaults = None
     
-  guiFunction.createSettingsPage(configs,labelName, fields, popup, dropDown, defaults)
+  guiFunction.createSettingsPage(configs,labelName, fields, popup, defaults)
 
 # @Brief Creates the OpenMotor settings configuration GUI
 # @param popup - The popup window where the OpenMotor settings configuration will be created
 def createOMsettings(popup):
   guiFunction.clearWidgetColumn(popup, 1)
   labelName = "OpenMotor settings Config - this program features default OM settings unless changed here"
-  dropDown = None
 
   fields = [
             "Max Pressure - Pa", "Max Mass Flux - kg/(m^2*s)", "Max Mach Number", "Min Port Throat Ratio",
@@ -405,7 +403,7 @@ def createOMsettings(popup):
   else:
     defaults = None
   
-  guiFunction.createSettingsPage(configs,labelName, fields, popup, dropDown, defaults)
+  guiFunction.createSettingsPage(configs,labelName, fields, popup, defaults)
 
 # @Brief Creates the Nozzle Iterator configuration GUI
 # @param popup - The popup window where the Nozzle Iterator configuration will be created
