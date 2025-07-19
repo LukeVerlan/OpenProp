@@ -16,18 +16,24 @@ if repo_root not in sys.path:
 import tkinter as tk
 from tkinter import ttk 
 from tkinter import filedialog as fd 
+from PIL import Image, ImageTk
 
 # Python libraries
 import re
 import json
 import copy
+import matplotlib.pyplot as plt
 
 # Custom files
 import FileUpload
 import guiFunction
 
+# Tool Files
+from NozzleIterator import NozzleIterator
+
 # @Breif Main function of OpenProp, initializes the GUI and sets up the main page
 def main(): 
+
 
   global configs
 
@@ -53,6 +59,14 @@ def main():
             "sepPressureRatio" : 0.3
         }
     }
+  
+  # ----------------------------------------------------
+  # FOR UPLOAD DEV WORK COMMENT OUT FOR USER EXPERIENCE
+  # ----------------------------------------------------
+
+  with open('./NozzleIterator/config.json', 'r') as file:
+    configs = json.load(file)
+    
 
   # initialize main GUI page
   gui = tk.Tk()
@@ -75,7 +89,7 @@ def main():
   functionsLabel.grid(row=0, column=0, sticky="nsew")
 
   nozzleBtn = ttk.Button(functionsFrame, text="Nozzle Iterator",
-                         command=runNozzleIterator)
+                         command=lambda: NozzleIteratorGUI(gui))
   nozzleBtn.grid(row=1, column=0, sticky="nsew")
 
   impulseBtn = ttk.Button(functionsFrame, text="Impulse Calculator")
@@ -103,19 +117,96 @@ def main():
 
   gui.mainloop()
 
-def runNozzleIterator():
+def NozzleIteratorGUI(gui):
+
+  OPimDir = "main/OpenPropLogo.png"
+  OPim = Image.open(OPimDir)
+  resizedOPim = OPim.resize((200,625))
+  tk_OPim = ImageTk.PhotoImage(resizedOPim)
+
+  popup=tk.Toplevel()
+
+  popup.transient(gui) # Keep it on top of main window
+  popup.grab_set()   
+
+  popup.geometry("860x720")
+  popup.resizable(False, False)
+
+  labelFrame = tk.Frame(popup, borderwidth=1, relief="solid")
+  labelFrame.grid(row=0, column=0, sticky='nsew')
+
+  labelFrame.columnconfigure(0, weight=1)
+  labelFrame.rowconfigure([0,1], weight=1)
+
+  logoFrame= tk.Frame(popup, borderwidth=1, relief='solid')
+  logoFrame.grid(row=1, column=0,sticky='nsw')
+
+  logoLabel = tk.Label(logoFrame,image=tk_OPim)
+  logoLabel.grid(row=0,column=0, sticky='nsew')
+
+  logoLabel.image = tk_OPim
+
+  graphsFrame = tk.Frame(popup)
+  graphsFrame.grid(row=0, column=1, sticky='nsew',rowspan=2)
+  graphsFrame.rowconfigure([0,1,2,3], weight=1)
+
+  # Create a label for the Nozzle Iterator
+  label = tk.Label(labelFrame, text="Nozzle Iterator Configuration")
+  label.grid(row=0, column=0, pady=1, sticky='ew')
   
+  exitButton = tk.Button(labelFrame, text="exit", command=lambda: (plt.close('all'), popup.destroy()), borderwidth=1, relief='solid')
+  exitButton.grid(row=3,column=0, pady=1, sticky='nsew')
+  
+
   if FileUpload.hasConfigs(configs, 'All'):
-    NIconfig = copy.deepcopy(configs)
-    jsonNI = json.dumps(NIconfig, indent=4)
-    process = sub.Popen([sys.executable, "NozzleIterator/NozzleIterator.py", jsonNI], stdout=sub.PIPE, stderr=sub.PIPE)
-    (stdout, stderr) = process.communicate()
-    if stdout:
-      print(stdout.decode('utf-8'))
-    if stderr:
-      print(stderr.decode('utf-8'))
+    isValidLabel = tk.Label(labelFrame, text="Valid Config Found")
+    isValidLabel.grid(row=1, column=0, pady=2, padx=2, sticky='ew')
+
+    runButton = tk.Button(labelFrame, text="Run Nozzle Iterator",
+                           command= lambda:runNozzleIterator(), borderwidth=1, relief='solid')
+    runButton.grid(row=2,column=0,sticky='nsew')
+
+    def runNozzleIterator():
+      runningLabel = tk.Label(graphsFrame, text="Running...")
+      runningLabel.grid(row=0,column=0,sticky='ew', columnspan=2)
+      popup.update()
+
+      NIconfig = copy.deepcopy(configs)
+      jsonNI = json.dumps(NIconfig, indent=4)
+
+      result = NozzleIterator.main(jsonNI)
+
+      if result is not None:
+        
+        simImage = result.plotSim()
+        resized = simImage.resize((650, 440))
+        tk_simImage = ImageTk.PhotoImage(resized)
+
+        simSuccesslabel = tk.Label(graphsFrame, text="Simulation Results")
+        simSuccesslabel.grid(row=0,column=0,sticky='ew', columnspan=2)
+
+        simGraph = tk.Label(graphsFrame, image=tk_simImage, borderwidth=1, relief='solid')
+        simGraph.grid(row=1,column=0, sticky='nsew', pady=2, columnspan=2)
+        simGraph.image = tk_simImage
+
+        simResultsPeak = tk.Label(graphsFrame, text=result.peakValues())
+        simResultsPeak.grid(row=2,column=0, sticky= 'nsew', pady=2)
+
+        simResultsGeneral = tk.Label(graphsFrame, text= result.generalValues())
+        simResultsGeneral.grid(row=2, column=1, sticky='nsew', pady=2)
+
+        nozzleResults = tk.Label(graphsFrame, text=result.nozzleStatistics(), borderwidth=1, relief='solid')
+        nozzleResults.grid(row=3,column=0, sticky='nsew', pady=2, columnspan=2)
+      else:
+        # Handle failed criteria
+        pass 
+
   else:
-    print("No configs found, please create or upload configs first")
+    isValidLabel = tk.Label(labelFrame, text="No valid config found, please upload or create a config")
+    isValidLabel.grid(row=0, column=0, sticky='nsew')
+
+
+  # Create a button to run the Nozzle Iterator
   
 # @Brief Handles the creation of the configuration GUI, allows user to create or upload configs
 # @param gui - The main GUI window
@@ -129,6 +220,7 @@ def handleCreateConfig(gui):
   popup.columnconfigure(1, weight=2)
   popup.columnconfigure(2, weight=1)
   popup.geometry("1200x500") # width px by height px
+  popup.resizable(False, False)
 
   optionsFrame = tk.Frame(popup)
   optionsFrame.grid(row=0, column=0, rowspan=10, sticky='nsew')
@@ -254,7 +346,7 @@ def createNozzleIterator(popup):
               }
 
   fields = [
-            "Min Throat Diameter - m", "Max Throat Diameter - m", "Min Throat Length - m", "Max Throat Length - m",
+            "Min Throat Diameter - m", "Max Throat Diameter - m", "Min Throat Length - m", "Max Throat Length - m", "Exit Diameter - m",
             "Exit Half Angle - deg","Slag Coefficient - (m*Pa)/s","Erosion Coefficient - s/(m*Pa)","Efficiency - 0.##",
             "Nozzle Diameter - m", "Nozzle Length - m", "Min Conv Half Angle - deg", "Max Conv Half Angle - deg",
             "Iteraton Step Size - m", "# Threads to allocate for simulation"
@@ -278,6 +370,7 @@ def createNozzleIterator(popup):
         "# Threads to allocate for simulation": configs["Nozzle"].get("iteration_threads", ""),
         "Search Preference": configs["Nozzle"].get("preference", ""),
         "Parallel Simulation (Harder on computer)": configs["Nozzle"].get("parallel_mode", ""),
+        "Exit Diameter - m": configs["Nozzle"].get("exitDia", "")
     }
   else:
     defaults = None

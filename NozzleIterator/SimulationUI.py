@@ -4,24 +4,62 @@
 
 import csv 
 
+# math handling modules
+import math
+
+# Image handling objects
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
+from PIL import Image
+import io
+
 class SimulationUI:
 
   # Breif - Constructor
   # param simResult - an openMotor simulation result
-  def __init__(self, simResult):
+  def __init__(self, simResult, nozzle):
     self.simResult = simResult
+    self.nozzle = nozzle
 
   # Brief - creates a plot of the thrust curve for the given simulation
-  def plotThrustCurve(self):
-      import matplotlib.pyplot as plt
-      time = self.simResult.channels['time'].getData()
-      thrust = self.simResult.channels['force'].getData()
-      plt.plot(time, thrust)
-      plt.title("Thrust Curve")
-      plt.xlabel("Time (s)")
-      plt.ylabel("Thrust (N)")
-      plt.grid(True)
-      plt.show()
+  def plotSim(self):
+    time = self.simResult.channels['time'].getData()
+    thrust = self.simResult.channels['force'].getData()
+    pressure = self.simResult.channels['pressure'].getData()
+
+    fig, ax1 = plt.subplots()
+
+    units = {}
+    units['pressure'] = 'Pa'
+    units['force'] = 'N'
+    units['time'] = 's'
+
+    ax1.plot(time, pressure, 'b-', label='Pressure ' + '(' + units['pressure'] + ')')
+    ax1.set_xlabel('Time ' + '(' + units['time'] + ')')
+    ax1.set_ylabel('Pressure ' + '(' + units['pressure'] + ')', color='b')
+    ax1.tick_params(axis='y', labelcolor='b')
+
+    # Create a second Y-axis that shares the same X-axis
+    ax2 = ax1.twinx()
+    ax2.plot(time, thrust, 'r--', label='Thrust ' + '(' + units['force']+ ')')
+    ax2.set_ylabel('Thrust ' + '(' + units['force']+ ')', color='r')
+    ax2.tick_params(axis='y', labelcolor='r')
+
+    plt.title('Motor Simluation Results with Optimal nozzle')
+
+    return self._plotToImage(fig)
+
+  # @brief converts an a plot into an image
+  # @param figure of the graph from mathpltlib
+  def _plotToImage(self, fig):
+         
+    canvas = FigureCanvas(fig)
+    buf = io.BytesIO()
+    canvas.print_png(buf)
+    buf.seek(0)
+
+    image = Image.open(buf)
+    return image
 
   # Brief - Saves the simulation to a CSV
   # param fileName - name of the file to save to
@@ -33,28 +71,48 @@ class SimulationUI:
   # return - formatted string of peak and general values
   def peakValues(self):
     return (f"Peak values\n"
-            f"  Kn: {self.simResult.getPeakKN()}\n"
-            f"  Pressure: {self.simResult.getMaxPressure()}\n"
-            f"  Mass Flux: {self.simResult.getPeakMassFlux()}\n"
-            f"  Mach Number: {self.simResult.getPeakMachNumber()}\n"
+            f"  Kn: {self.formatToDecimalPlaces(self.simResult.getPeakKN())}\n"
+            f"  Pressure: {self.formatToDecimalPlaces(self.simResult.getMaxPressure())} (Pa)\n"
+            f"  Mass Flux: {self.formatToDecimalPlaces(self.simResult.getPeakMassFlux())} (kg/(m^2*s)) \n "
+            f"  Mach Number: {self.formatToDecimalPlaces(self.simResult.getPeakMachNumber())} \n"
+            f"  Average Thrust: {self.formatToDecimalPlaces(self.simResult.getAverageForce())} (N) \n")
+
+  def generalValues(self):
+    return (f"General Values\n"
+            f"ISP: {self.formatToDecimalPlaces(self.simResult.getISP())}\n"
+            f" Burn Time: {self.formatToDecimalPlaces(self.simResult.getBurnTime())} (s) \n"
+            f"Average Pressure: {self.formatToDecimalPlaces(self.simResult.getAveragePressure())} (Pa) \n"
+            f"Initial Kn: {self.formatToDecimalPlaces(self.simResult.getInitialKN())}\n"
+            f"Delievered Impulse: {self.formatToDecimalPlaces(self.simResult.getImpulse())} (N*s) \n")
+
+  def formatToDecimalPlaces(self, num, numDec=2):
+    return format(num, "." + str(numDec) + "f")
+    
+  # Brief - print out the statistics of the given nozzle
+  # param nozzle - nozzle dictionary 
+  def nozzleStatistics(self):
+    return (f"\nNozzle Dimensions\n\n"
+            f"    Exit Half Angle: {format(self.nozzle['divAngle'],".1f")} deg     Throat Diameter: {format(self.nozzle['throat'] * 100,".1f")} cm\n\n"
+            f"    Convergence Half Angle : {format(self.nozzle['convAngle'],".1f")} deg    Throat Length: {format((self.nozzle['throatLength'] * 100),".1f")} cm\n"
             f"\n"
-            f"General Values\n"
-            f"  ISP: {self.simResult.getISP()}\n"
-            f"  Burn Time: {self.simResult.getBurnTime()}\n"
-            f"  Average Pressure: {self.simResult.getAveragePressure()}\n"
-            f"  Initial Kn: {self.simResult.getInitialKN()}\n"
-            f"  Total Delievered Impulse: {self.simResult.getImpulse()}\n"
-            f"  Average Thrust: {self.simResult.getAverageForce()}\n")
-  
+            f" Expansion ratio: {format(self.getExpansionRatio(self.nozzle['throat'],self.nozzle['exit']),".2f")}\n")
+      
+  # Brief - calculate the expansion ratio of the given nozzle
+  # param throatDia - diameter of the nozzle throat
+  # pararm exitDia - exit diameter of the nozzle
+  # return - the given nozzles expansion ratio
+  def getExpansionRatio(self, throatDia, exitDia):
+    return (math.pow(exitDia,2))/(math.pow(throatDia,2))
+      
   # Brief - breaks down thrust curve and exports it as a CSV
   # param filename - Name of the csv file, must end in csv
   def exportThrustCurve(self, filename):
-      with open(filename, mode='w', newline='') as file:
-          writer = csv.writer(file)
-          writer.writerow(["Time (s)", "Thrust (N)"])
-          for t, f in zip(self.simResult.channels['time'].getData(), self.simResult.channels['force'].getData()):
-              writer.writerow([t, f])
-    
+    with open(filename, mode='w', newline='') as file:
+      writer = csv.writer(file)
+      writer.writerow(["Time (s)", "Thrust (N)"])
+      for t, f in zip(self.simResult.channels['time'].getData(), self.simResult.channels['force'].getData()):
+        writer.writerow([t, f])
+      
 
           
   

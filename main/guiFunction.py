@@ -35,10 +35,10 @@ def createSettingsPage(configs, labelName, fields, popup, dropDown=None, default
 
   entries = createLabledEntryBoxes(frame, fields, dropDown, defaults)
 
-  saveButton = tk.Button(frame, text="Save Config", command=lambda: saveEntries(configs, entries,labelName, None),
+  saveButton = tk.Button(frame, text="Save Config", command=lambda: saveEntries(configs, entries, labelName, None),
                         borderwidth=1, relief="solid")
   
-  saveButton.grid(row=8,column=5, padx=4, pady=4, sticky = 'se')
+  saveButton.grid(row=9,column=5, padx=4, pady=4, sticky = 'se')
 
 # @brief Creates a base frame for the settings page.
 # @param popup The popup window where the base frame will be created.
@@ -100,13 +100,17 @@ def createLabledEntryBoxes(parent, fields, dropDown=None, defaults=None):
     
     entries[field] = entry
     if dropDown is not None and currIndex == len(fields) - 1:
+      dropCount = 0
       for key in dropDown:
 
         label = tk.Label(parent, text=key)
-        label.grid(row=j,column=i+1,sticky='nsew', padx=14, pady=6)
+        label.grid(row=j+2,column=dropCount, sticky='nsew', padx=14, pady=6)
 
         comboBox = ttk.Combobox(parent, values=dropDown[key])
-        comboBox.grid(row=j+1,column=i+1,sticky='nsew', padx=14, pady=6)
+        comboBox.grid(row=j+3,column=dropCount,sticky='nsew', padx=14, pady=6)
+
+        dropCount +=1
+
         if defaults and key in defaults:
           val = defaults[key]
           if isinstance(val, bool):
@@ -115,8 +119,6 @@ def createLabledEntryBoxes(parent, fields, dropDown=None, defaults=None):
             comboBox.set(str(val))
         else:
           comboBox.set("Select Preferece")
-
-        i+=1 
 
         entries[key] = comboBox
 

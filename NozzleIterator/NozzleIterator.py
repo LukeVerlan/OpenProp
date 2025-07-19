@@ -43,13 +43,13 @@ def frange(start, stop, step):
     return vals
 
 # Brief - Parses the config given to the nozzle files and runs the simluation flow
-def main():
+def main(jsonFile):
 
-  # Parses command line arguments, nessecary for integrating with main
-  parser = argparse.ArgumentParser(description="Nozzle config parser") # create cmd parser 
-  parser.add_argument("config", help="Path to the config JSON file") # grab configfilepath
-  args = parser.parse_args() # Parse those arguments
-  jsonFile = args.config # give me the file at the end of that directory
+#   # Parses command line arguments, nessecary for integrating with main
+#   parser = argparse.ArgumentParser(description="Nozzle config parser") # create cmd parser 
+#   parser.add_argument("config", help="Path to the config JSON file") # grab configfilepath
+#   args = parser.parse_args() # Parse those arguments
+#   jsonFile = args.config # give me the file at the end of that directory
 
   configFile = json.loads(jsonFile) # Load the config file as a json object
 
@@ -62,7 +62,7 @@ def main():
   bestConfiguration = iteration(configFile["Nozzle"], motor, max_threads, parallel_mode)
 
   (simRes, nozzle) = bestConfiguration
-  iterationResult(simRes, nozzle)
+  return iterationResult(simRes, nozzle)
 
 # Brief - Parse the configuration files
 # Parameters - config file 
@@ -231,43 +231,22 @@ def calcConvergenceHalfAngle(dia, len, throatDia, throatLen, exitHalf, exitDia):
   # Solve Convergence half angle
   return math.degrees(math.atan((r_total-r_throat)/lenConv))
 
-# Brief - print out the statistics of the given nozzle
-# param nozzle - nozzle dictionary 
-def printNozzleStatistics(nozzle):
-  print(f"\nNozzle Dimensions\n"
-        f"  Angles\n"
-        f"    Exit Half Angle: {format(nozzle['divAngle'],".2f")} deg\n"
-        f"    Convergence Half Angle : {format(nozzle['convAngle'],".4f")} deg\n"
-        f"\n"
-        f"  Throat\n"
-        f"    Diameter: {format(nozzle['throat'] * 100,".4f")} cm\n"
-        f"    Length: {format((nozzle['throatLength'] * 100),".4f")} cm\n"
-        f" \n"
-        f" Expansion ratio: {format(getExpansionRatio(nozzle['throat'],nozzle['exit']),".2f")}\n")
 
 # Brief - print out and format the results of the motor test
 # param simRes - simulation result
 # param nozzle - winning nozzle 
 def iterationResult(simRes, nozzle):
+  
+  ui = SimulationUI(simRes, nozzle)
 
-  # Print out the nozzle statistics
-  printNozzleStatistics(nozzle)
-  
-  # Create nice simulation tool
-  ui = SimulationUI(simRes)
+#   print(ui.nozzleStatistics())
+#   # Print simluation peak values and plot thrust curve
+#   print(ui.peakValues())
+#   ui.exportThrustCurve("TestCSV.csv")
+#   ui.plotThrustCurve()
 
-  # Print simluation peak values and plot thrust curve
-  print(ui.peakValues())
-  ui.exportThrustCurve("TestCSV.csv")
-  ui.plotThrustCurve()
-  
-  
-# Brief - calculate the expansion ratio of the given nozzle
-# param throatDia - diameter of the nozzle throat
-# pararm exitDia - exit diameter of the nozzle
-# return - the given nozzles expansion ratio
-def getExpansionRatio(throatDia, exitDia):
-  return (math.pow(exitDia,2))/(math.pow(throatDia,2))
+  return ui
+
 
 # Brief - Determines if the simluation should be prefered to the current best
 # param priority - criteria to base preference on
