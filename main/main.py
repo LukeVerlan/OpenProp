@@ -480,6 +480,10 @@ def createImpulseCalculator(popup):
         "Parallel Simulation (Harder on computer)": configs["Nozzle"].get("parallel_mode", ""),
         "Exit Diameter - m": configs["Nozzle"].get("exitDia", "")
     }
+
+# @brief creates a save page including a save button
+# @param popup - window that conatins the current 
+# @param type - the type of config that you are saving
 def saveCurrentConfigs(popup, type):
 
   guiFunction.clearWidgetColumn(popup, 1)
