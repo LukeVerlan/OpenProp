@@ -30,7 +30,11 @@ import guiFunction
 
 # Tool Files
 from NozzleIterator import NozzleIterator
-from impulseCalc import ImpulseCalculator
+# from impulseCalc import ImpulseCalculator
+from impulseCalcGUI import ImpulseCalculatorApp
+from impulseCalc.graphingTools import FlightDataPlotter
+from impulseCalc import ImpulseCalculator # Module for ImpulseCalculator.main
+
 
 # @Breif Main function of OpenProp, initializes the GUI and sets up the main page
 def main(): 
@@ -65,8 +69,8 @@ def main():
   # FOR UPLOAD DEV WORK COMMENT OUT FOR USER EXPERIENCE
   # ----------------------------------------------------
 
-  with open('./NozzleIterator/config.json', 'r') as file:
-    configs = json.load(file)
+  # with open('./NozzleIterator/config.json', 'r') as file:
+  #   configs = json.load(file)
     
 
   # initialize main GUI page
@@ -78,6 +82,9 @@ def main():
   gui.rowconfigure(0, weight=1)
   gui.columnconfigure(0, weight=1)
   gui.columnconfigure(1, weight=1)
+
+  flight_plotter_instance = FlightDataPlotter(output_dir="flight_plots")
+
 
   # Functions
   functionsFrame = ttk.Frame(gui)
@@ -93,7 +100,8 @@ def main():
                          command=lambda: NozzleIteratorGUI(gui))
   nozzleBtn.grid(row=1, column=0, sticky="nsew")
 
-  impulseBtn = ttk.Button(functionsFrame, text="Impulse Calculator")
+  impulseBtn = ttk.Button(functionsFrame, text="Impulse Calculator", 
+                          command=lambda: ImpulseCalculatorApp(gui, flight_plotter_instance, configs))
   impulseBtn.grid(row=2, column=0, sticky="nsew")
 
   curativeBtn = ttk.Button(functionsFrame, text="Curative Calculator")
@@ -208,67 +216,7 @@ def NozzleIteratorGUI(gui):
 
 
   # Create a button to run the Nozzle Iterator
-  
-
-def ImpulseCalculatorGUI(gui):
-
-  OPimDir = "main/OpenPropLogo.png"
-  OPim = Image.open(OPimDir)
-  resizedOPim = OPim.resize((200,625))
-  tk_OPim = ImageTk.PhotoImage(resizedOPim)
-
-  popup=tk.Toplevel()
-
-  popup.transient(gui) # Keep it on top of main window
-  popup.grab_set()   
-
-  popup.geometry("860x720")
-  popup.resizable(False, False) #bastard man
-
-  labelFrame = tk.Frame(popup, borderwidth=1, relief="solid")
-  labelFrame.grid(row=0, column=0, sticky='nsew')
-
-  # labelFrame.columnconfigure(0, weight=1)
-  # labelFrame.rowconfigure([0,1], weight=1)
-
-  logoFrame= tk.Frame(popup, borderwidth=1, relief='solid')
-  logoFrame.grid(row=1, column=0,sticky='nsw')
-
-  logoLabel = tk.Label(logoFrame,image=tk_OPim)
-  logoLabel.grid(row=0,column=0, sticky='nsew')
-
-  logoLabel.image = tk_OPim
-
-  graphsFrame = tk.Frame(popup)
-  graphsFrame.grid(row=0, column=1, sticky='nsew',rowspan=2)
-  graphsFrame.rowconfigure([0,1,2,3], weight=1)
-
-  # Create a label for the Nozzle Iterator
-  label = tk.Label(labelFrame, text="Impulse Calculator Configuration")
-  label.grid(row=0, column=0, pady=1, sticky='ew')
-  
-  exitButton = tk.Button(labelFrame, text="exit", command=lambda: (plt.close('all'), popup.destroy()), borderwidth=1, relief='solid')
-  exitButton.grid(row=3,column=0, pady=1, sticky='nsew')
-  
-  if FileUpload.hasConfigs(configs, 'All'):
-    isValidLabel = tk.Label(labelFrame, text="Valid Config Found")
-    isValidLabel.grid(row=1, column=0, pady=2, padx=2, sticky='ew')
-
-    runButton = tk.Button(labelFrame, text="Run Nozzle Iterator",
-                           command= lambda:runImpulseCalcualtor(), borderwidth=1, relief='solid')
-    runButton.grid(row=2,column=0,sticky='nsew')
-
-
-  def runImpulseCalcualtor():
-      runningLabel = tk.Label(graphsFrame, text="Running...")
-      runningLabel.grid(row=0,column=0,sticky='ew', columnspan=2)
-      popup.update()
-
-      NIconfig = copy.deepcopy(configs)
-      jsonNI = json.dumps(NIconfig, indent=4)
-
-      result = ImpulseCalculator.main(jsonNI)
-    
+      
 
 # @Brief Handles the creation of the configuration GUI, allows user to create or upload configs
 # @param gui - The main GUI window
@@ -457,31 +405,34 @@ def createImpulseCalculator(popup):
   labelName = "Impulse Calculator Config"
 
   fields = [
-            "surfacePressure", "surfaceTemperature", "windVelocity", "railAngle", "launchSiteElevation",
-            "dragArea", "dragCoefficient", "noMotorMass", "specificImpulse", "desiredApogee", "apogeeThreshold", 
-            "burnTimeRange", "burnTimeStep", "minAvgTtW", "bisectionBoundPercDiff", "deltaT"
+            "Surface Pressure - Pa", "Surface Temperature - K", "Ground Wind Velocity (- if launching into wind) - m/s", "Rail Angle (+ into wind) - radians", "Launch Site Elevation - m",
+            "Cross-Section Area - m^2", "Drag Coefficient", "NO Motor Mass - kg", "Specific Impulse - (N * s)/kg", "Desired Apogee - m", "Apogee Range (0.01 = within 1%)", 
+            "Burn Time Range (0.5 = shows all within 50% of mean)", "Burn Time Step (burn time jump size) - s", "Minimum Average Thrust to Weight", "Idk bro just put 0.0001", "Flight Simulation mininum time step - s"
   ]  
 
   if "ImpulseCalculator" in configs and configs["ImpulseCalculator"] is not None:
     defaults = {
-        "Min Throat Diameter - m": configs["Nozzle"].get("minDia", ""),
-        "Max Throat Diameter - m": configs["Nozzle"].get("maxDia", ""),
-        "Min Throat Length - m": configs["Nozzle"].get("minLen", ""),
-        "Max Throat Length - m": configs["Nozzle"].get("maxLen", ""),
-        "Exit Half Angle - deg": configs["Nozzle"].get("exitHalf", ""),
-        "Slag Coefficient - (m*Pa)/s": configs["Nozzle"].get("SlagCoef", ""),
-        "Erosion Coefficient - s/(m*Pa)": configs["Nozzle"].get("ErosionCoef", ""),
-        "Efficiency - 0.##": configs["Nozzle"].get("Efficiency", ""),
-        "Nozzle Diameter - m": configs["Nozzle"].get("nozzleDia", ""),
-        "Nozzle Length - m": configs["Nozzle"].get("nozzleLength", ""),
-        "Min Conv Half Angle - deg": configs["Nozzle"].get("minHalfConv", ""),
-        "Max Conv Half Angle - deg": configs["Nozzle"].get("maxHalfConv", ""),
-        "Iteraton Step Size - m": configs["Nozzle"].get("iteration_step_size", ""),
-        "# Threads to allocate for simulation": configs["Nozzle"].get("iteration_threads", ""),
-        "Search Preference": configs["Nozzle"].get("preference", ""),
-        "Parallel Simulation (Harder on computer)": configs["Nozzle"].get("parallel_mode", ""),
-        "Exit Diameter - m": configs["Nozzle"].get("exitDia", "")
+        "Surface Pressure - Pa": configs["ImpulseCalculator"].get("surfacePressure", ""),
+        "Surface Temperature - K": configs["ImpulseCalculator"].get("surfaceTemperature", ""),
+        "Ground Wind Velocity (- if launching into wind) - m/s": configs["ImpulseCalculator"].get("windVelocity", ""),
+        "Rail Angle (+ into wind) - radians": configs["ImpulseCalculator"].get("railAngle", ""),
+        "Launch Site Elevation - m": configs["ImpulseCalculator"].get("launchSiteElevation", ""),
+        "Cross-Section Area - m^2": configs["ImpulseCalculator"].get("dragArea", ""),
+        "Drag Coefficient": configs["ImpulseCalculator"].get("dragCoefficient", ""),
+        "NO Motor Mass - kg": configs["ImpulseCalculator"].get("noMotorMass", ""),
+        "Specific Impulse - (N * s)/kg": configs["ImpulseCalculator"].get("specificImpulse", ""),
+        "Desired Apogee - m": configs["ImpulseCalculator"].get("desiredApogee", ""),
+        "Apogee Range (0.01 = within 1%)": configs["ImpulseCalculator"].get("apogeeThreshold", ""),
+        "Burn Time Range (0.5 = shows all within 50% of mean)": configs["ImpulseCalculator"].get("burnTimeRange", ""),
+        "Burn Time Step (burn time jump size) - s": configs["ImpulseCalculator"].get("burnTimeStep", ""),
+        "Minimum Average Thrust to Weight": configs["ImpulseCalculator"].get("minAvgTtW", ""),
+        "Idk bro just put 0.0001": configs["ImpulseCalculator"].get("bisectionBoundPercDiff", ""),
+        "Flight Simulation mininum time step - s": configs["ImpulseCalculator"].get("deltaT", ""),
     }
+  else:
+    defaults = None
+  guiFunction.createSettingsPage(configs, labelName, fields, popup, None, defaults)
+
 def saveCurrentConfigs(popup, type):
 
   guiFunction.clearWidgetColumn(popup, 1)
@@ -503,6 +454,9 @@ def saveCurrentConfigs(popup, type):
       cfg = configs['Motor']
     elif type == 'Nozzle':
       cfg = configs['Nozzle']
+
+    elif type == 'ImpulseCalculator':
+      cfg = configs['ImpulseCalculator']
 
     saveButton = tk.Button(frame, text='Save', command=lambda:FileUpload.cfgToJson(cfg, frame))
     saveButton.grid(row=0,column=0, sticky="ew")

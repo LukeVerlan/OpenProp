@@ -145,5 +145,7 @@ def saveEntries(configs, entries, configName, type):
       configureDictionaries.configureNIDict(configs, entryVals)
     elif configName == "Grain":
       configureDictionaries.configureGrainDict(configs, entryVals, type)
+    elif configName == "Impulse Calculator Config":
+      configureDictionaries.configureImpulseCalcDict(configs, entryVals)
 
     print(configs)

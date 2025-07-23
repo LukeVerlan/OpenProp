@@ -1,59 +1,74 @@
+# graphingTools.py
+
 import matplotlib.pyplot as plt
 import numpy as np
 import math
+import os
+from PIL import Image, ImageTk # ImageTk is used by ImpulseCalculatorApp, not directly in plotter
 
-# Standalone helper function to construct and display a plot on demand
-def display_flight_plot_on_demand(plotter_instance, plot_data_ref_list, index, plot_types=None):
+# --- Standalone helper function for tabular data output ---
+def print_flight_data(flight_data_array, print_interval=5.0):
     """
-    Constructs and displays a specific plot from stored data references.
-
-    Args:
-        plotter_instance (FlightDataPlotter): An instance of the FlightDataPlotter class.
-        plot_data_ref_list (list): A list of tuples, where each tuple is
-                                   (flight_data_array, plot_title).
-        index (int): The 0-based index of the plot to display from the list.
-        plot_types (list or str, optional): Specifies which plot(s) to generate (e.g., "trajectory").
-                                       If None, all 8 plots are generated.
-                                       See FlightDataPlotter.plot_flight_data for valid options.
+    Prints a summary of simulation flight data at specified time intervals.
+    (This function is as you provided, with the minor drag component correction)
     """
-    if not isinstance(plot_data_ref_list, list):
-        print("Error: plot_data_ref_list must be a list of (data, title) tuples.")
-        return
-    if not (0 <= index < len(plot_data_ref_list)):
-        print(f"Error: Index {index} is out of bounds. List has {len(plot_data_ref_list)} plots (0 to {len(plot_data_ref_list)-1}).")
+    if flight_data_array.size == 0:
+        print("No flight data to display.")
         return
 
-    flight_data_array, plot_title_base = plot_data_ref_list[index]
-    
-    # Modify display title based on specific plot types selected
-    if isinstance(plot_types, str):
-        display_title = f"{plot_title_base} - {plot_types.replace('_', ' ').title()}"
-    elif isinstance(plot_types, list) and plot_types:
-        # For multiple selected plots, list the types in the title
-        selected_titles = [pt.replace('_', ' ').title() for pt in plot_types]
-        display_title = f"{plot_title_base} - Custom View: {', '.join(selected_titles)}"
-    else: # All plots
-        display_title = plot_title_base
+    next_print_time = 0.0
 
-    print(f"\nAttempting to display plot for: {display_title} (Index {index})...")
-    
-    # Call the plotter instance's method to construct the plot (it returns the figure)
-    fig = plotter_instance.plot_flight_data(flight_data_array, title=display_title, plot_types=plot_types)
-    
-    if fig:
-        plt.show(block=True) # Display the newly constructed plot
-        plt.close(fig) # Close the figure immediately after it's been shown and closed by user
-    else:
-        print(f"Failed to construct plot for index {index}.")
+    TIME_COL = 0
+    X_POS_COL = 1
+    Y_POS_COL = 2
+    X_VEL_COL = 3
+    Y_VEL_COL = 4
+    X_THRUST_COL = 5
+    Y_THRUST_COL = 6
+    X_DRAG_COL = 7
+    Y_DRAG_COL = 8
+    X_ACCEL_COL = 9
+    Y_ACCEL_COL = 10
+
+    print(f"\n--- Flight Data (printed every {print_interval:.1f} seconds) ---")
+    print("-------------------------------------------------------------------")
+
+    for row_index in range(flight_data_array.shape[0]):
+        current_time = flight_data_array[row_index, TIME_COL]
+
+        if current_time >= next_print_time - 1e-9:
+            if row_index == 0 or current_time >= next_print_time:
+                xPosition = flight_data_array[row_index, X_POS_COL]
+                yPosition = flight_data_array[row_index, Y_POS_COL]
+                xVelocity = flight_data_array[row_index, X_VEL_COL]
+                yVelocity = flight_data_array[row_index, Y_VEL_COL]
+                x_thrust = flight_data_array[row_index, X_THRUST_COL]
+                y_thrust = flight_data_array[row_index, Y_THRUST_COL]
+                x_drag = flight_data_array[row_index, X_DRAG_COL] # Corrected from Y_DRAG_COL
+                y_drag = flight_data_array[row_index, Y_DRAG_COL]
+                ax = flight_data_array[row_index, X_ACCEL_COL]
+                ay = flight_data_array[row_index, Y_ACCEL_COL]
+
+                print(f"--- Time: {current_time:.2f} s ---")
+                print(f"  Position: x={xPosition:.2f} m, y={yPosition:.2f} m")
+                print(f"  Velocity: vx={xVelocity:.2f} m/s, vy={yVelocity:.2f} m/s")
+                print(f"  Thrust Components: Fx={x_thrust:.2f} N, Fy={y_thrust:.2f} N")
+                print(f"  Drag: Dx={x_drag:.2f} N, Dy={y_drag:.2f} N")
+                print(f"  Acceleration: ax={ax:.2f} m/s^2, ay={ay:.2f} m/s^2")
+                print("-" * 20)
+
+                next_print_time = math.ceil((current_time + 1e-9) / print_interval) * print_interval
+    print("\n--- End of Flight Data for flight above ---\n")
 
 
+# --- FlightDataPlotter Class ---
 class FlightDataPlotter:
     """
-    A class to construct matplotlib Figure objects for flight data.
-    Each call to plot_flight_data creates a new figure tailored to the requested plots.
+    A class to construct matplotlib Figure objects for flight data and save them as images.
+    It also manages the paths of created plot files.
     """
-    def __init__(self):
-        # Define column indices as class attributes for easy access by helper methods
+    def __init__(self, output_dir="flight_plots"):
+        # Define column indices as class attributes for easy access
         self.TIME_COL = 0
         self.X_POS_COL = 1
         self.Y_POS_COL = 2
@@ -65,7 +80,19 @@ class FlightDataPlotter:
         self.Y_DRAG_COL = 8
         self.X_ACCEL_COL = 9
         self.Y_ACCEL_COL = 10
-        
+
+        self.plot_output_dir = output_dir
+        os.makedirs(self.plot_output_dir, exist_ok=True)
+
+        self.saved_plot_paths = {} # Dictionary to store plot_key: file_path
+
+        # Map plot_type strings to helper methods and their required data
+        # This will be populated fully on the first call to plot_flight_data
+        self._plot_configurations_map = {}
+        self.available_plot_types = [] # Public list of available plot type keys
+
+
+    # --- Private Helper Methods for Individual Plots (As you provided, UNCHANGED) ---
     def _plot_position_time(self, ax, time, x_pos, y_pos):
         ax.plot(time, x_pos, label='X Position (m)', color='blue')
         ax.plot(time, y_pos, label='Y Position (Altitude) (m)', color='red')
@@ -81,8 +108,8 @@ class FlightDataPlotter:
         ax.set_xlabel('Horizontal Distance (m)')
         ax.set_ylabel('Altitude (m)')
         ax.grid(True)
-        ax.autoscale(enable=True, axis='both', tight=True) 
-        
+        ax.autoscale(enable=True, axis='both', tight=True)
+
     def _plot_velocity_components_time(self, ax, time, x_vel, y_vel):
         ax.plot(time, x_vel, label='X Velocity (m/s)', color='blue')
         ax.plot(time, y_vel, label='Y Velocity (m/s)', color='red')
@@ -108,7 +135,7 @@ class FlightDataPlotter:
         ax.set_ylabel('Force (N)')
         ax.legend()
         ax.grid(True)
-        
+
     def _plot_drag_components_time(self, ax, time, x_drag, y_drag):
         ax.plot(time, x_drag, label='X Drag (N)', color='blue')
         ax.plot(time, y_drag, label='Y Drag (N)', color='red')
@@ -136,41 +163,38 @@ class FlightDataPlotter:
         ax.grid(True)
 
 
-    def plot_flight_data(self, flight_data_array, title="Flight Simulation Data", plot_types=None): # plot_types is list or str or None
-        """
-        Constructs and returns a new matplotlib Figure object containing the plot(s).
-        If plot_types is a list of strings, only those specified plots are created.
-        If plot_types is a single string, that single plot is created.
-        If plot_types is None or an empty/invalid list, all 8 subplots are created.
-        Does NOT show or close the plot.
+    def _generate_plot_filename(self, base_title, plot_types):
+        """Helper to generate a consistent filename based on title and plot types."""
+        sanitized_title = "".join(c for c in base_title if c.isalnum() or c in (' ', '.', '_')).replace(' ', '_')
+        if plot_types and isinstance(plot_types, list):
+            type_suffix = "_".join(plot_types)
+        elif plot_types and isinstance(plot_types, str):
+            type_suffix = plot_types
+        else:
+            type_suffix = "all"
+        # Ensure suffix doesn't start or end with underscore if base_title ends with one
+        type_suffix = type_suffix.strip('_')
+        return f"{sanitized_title.strip('_')}_{type_suffix}.png"
 
-        Args:
-            flight_data_array (np.ndarray): A 2D NumPy array containing flight data.
-                                            Expected 11 columns in this order:
-                                            [time, xPosition, yPosition, xVelocity, yVelocity,
-                                             x_thrust, y_thrust, x_drag, y_drag, ax, ay]
-            title (str, optional): The main title for the plot. Defaults to "Flight Simulation Data".
-            plot_types (list or str, optional): Specifies which plot(s) to generate. 
-                                                If a list of strings: generate specified plots.
-                                                If a single string: generate that one plot.
-                                                If None or invalid: generate all 8 plots.
-                                                Valid options are accessible via self.available_plot_types.
-        
-        Returns:
-            matplotlib.figure.Figure: The Figure object containing the plot(s), or None if no data.
+
+    def plot_flight_data(self, flight_data_array, title="Flight Simulation Data", plot_types=None, save_to_file=True):
+        """
+        Constructs a new matplotlib Figure object containing the plot(s).
+        If save_to_file is True, it saves the plot as an image and returns the filepath.
+        Otherwise, it returns the Figure object.
         """
         # Basic input validation
         if not isinstance(flight_data_array, np.ndarray) or flight_data_array.ndim != 2:
             print("Error: flight_data_array must be a 2D NumPy array.")
-            return None
+            return None if save_to_file else None
         if flight_data_array.shape[1] != 11:
             print(f"Error: flight_data_array must have 11 columns. Found {flight_data_array.shape[1]}.")
-            return None
+            return None if save_to_file else None
         if flight_data_array.shape[0] == 0:
             print("No data to plot in the provided array.")
-            return None
+            return None if save_to_file else None
 
-        # Extract data columns (using self.COL constants)
+        # Extract data columns
         time = flight_data_array[:, self.TIME_COL]
         x_pos = flight_data_array[:, self.X_POS_COL]
         y_pos = flight_data_array[:, self.Y_POS_COL]
@@ -180,30 +204,30 @@ class FlightDataPlotter:
         y_thrust = flight_data_array[:, self.Y_THRUST_COL]
         x_drag = flight_data_array[:, self.X_DRAG_COL]
         y_drag = flight_data_array[:, self.Y_DRAG_COL]
-        ax_data = flight_data_array[:, self.X_ACCEL_COL] 
+        ax_data = flight_data_array[:, self.X_ACCEL_COL]
         ay_data = flight_data_array[:, self.Y_ACCEL_COL]
 
-        # Calculate magnitudes (needed regardless of plot_type)
+        # Calculate magnitudes
         total_velocity_magnitude = np.sqrt(x_vel**2 + y_vel**2)
-        total_thrust_magnitude = np.sqrt(x_thrust**2 + y_thrust**2) 
+        total_thrust_magnitude = np.sqrt(x_thrust**2 + y_thrust**2)
         total_drag_magnitude = np.sqrt(x_drag**2 + y_drag**2)
         total_acceleration_magnitude = np.sqrt(ax_data**2 + ay_data**2)
 
-        # Mapping of plot_type strings to helper methods and their required data
-        plot_configurations_current_data = {
-            "position_time": (self._plot_position_time, (time, x_pos, y_pos)),
-            "trajectory": (self._plot_trajectory, (x_pos, y_pos)),
-            "velocity_time": (self._plot_velocity_components_time, (time, x_vel, y_vel)),
-            "total_speed_time": (self._plot_total_speed_time, (time, total_velocity_magnitude)),
-            "thrust_components_time": (self._plot_thrust_components_time, (time, x_thrust, y_thrust)),
-            "drag_components_time": (self._plot_drag_components_time, (time, x_drag, y_drag)),
-            "acceleration_components_time": (self._plot_acceleration_components_time, (time, ax_data, ay_data)),
-            "total_acceleration_magnitude_time": (self._plot_total_acceleration_magnitude_time, (time, total_acceleration_magnitude)),
-        }
-        self.available_plot_types = list(plot_configurations_current_data.keys()) # Update class attribute
+        # Initialize plot configurations map (if not already done)
+        if not self._plot_configurations_map:
+            self._plot_configurations_map = {
+                "position_time": (self._plot_position_time, (time, x_pos, y_pos)),
+                "trajectory": (self._plot_trajectory, (x_pos, y_pos)),
+                "velocity_time": (self._plot_velocity_components_time, (time, x_vel, y_vel)),
+                "total_speed_time": (self._plot_total_speed_time, (time, total_velocity_magnitude)),
+                "thrust_components_time": (self._plot_thrust_components_time, (time, x_thrust, y_thrust)),
+                "drag_components_time": (self._plot_drag_components_time, (time, x_drag, y_drag)),
+                "acceleration_components_time": (self._plot_acceleration_components_time, (time, ax_data, ay_data)),
+                "total_acceleration_magnitude_time": (self._plot_total_acceleration_magnitude_time, (time, total_acceleration_magnitude)),
+            }
+            self.available_plot_types = list(self._plot_configurations_map.keys())
 
-
-        # --- Determine which plots to generate ---
+        # Determine which plots to generate
         plots_to_generate = []
         if plot_types is None: # Default: generate all
             plots_to_generate = self.available_plot_types
@@ -226,53 +250,118 @@ class FlightDataPlotter:
             print(f"Warning: Invalid type for plot_types: {type(plot_types)}. Generating all plots.")
             plots_to_generate = self.available_plot_types
 
-
         num_plots_to_generate = len(plots_to_generate)
-
-        # --- Create NEW Figure and Axes based on number of plots ---
         if num_plots_to_generate == 0:
-            print("No plots to generate.")
-            return None
-        elif num_plots_to_generate == 1:
+            print("No plots to generate based on selection.")
+            return None if save_to_file else None
+
+        # Create NEW Figure and Axes based on number of plots
+        if num_plots_to_generate == 1:
             fig, ax_obj_single = plt.subplots(1, 1, figsize=(10, 6))
-            # CORRECTED: Ensure ax_objs_iterable is always an iterable
-            ax_objs_iterable = [ax_obj_single] 
-        else: # Multiple plots (subset or all 8)
-            # Dynamic grid calculation for optimal layout
+            ax_objs_iterable = [ax_obj_single]
+        else:
             nrows = math.ceil(math.sqrt(num_plots_to_generate))
             ncols = math.ceil(num_plots_to_generate / nrows)
-            
-            # Ensure ncols is at least 2 for better default aesthetic unless only 1 row
-            if nrows == 1 and num_plots_to_generate > 1:
+            if nrows == 1 and num_plots_to_generate > 1: # For 1 row, multiple columns
                 ncols = num_plots_to_generate
-            elif nrows > 1 and ncols == 1 and num_plots_to_generate > 1:
-                 ncols = 2 # At least two columns for multiple rows.
+            elif nrows > 1 and ncols == 1 and num_plots_to_generate > 1: # For 1 column, multiple rows
+                 ncols = 2 # At least 2 columns if multiple rows and only 1 column was calculated
 
             fig, ax_objs_array = plt.subplots(nrows, ncols, figsize=(6 * ncols, 5 * nrows))
-            # CORRECTED: Ensure ax_objs_iterable is always an iterable (NumPy flat array)
-            ax_objs_iterable = ax_objs_array.flatten() 
+            ax_objs_iterable = ax_objs_array.flatten()
 
         fig.suptitle(title, fontsize=16 if num_plots_to_generate > 1 else 14)
 
-        # --- Populate the subplots ---
-        # The loop now consistently iterates over ax_objs_iterable
+        # Populate the subplots
         for i, plot_type_key in enumerate(plots_to_generate):
-            ax_current = ax_objs_iterable[i] 
-            plot_func, plot_args = plot_configurations_current_data[plot_type_key]
-            
+            ax_current = ax_objs_iterable[i]
+            # Ensure the configuration map is updated with current data
+            # This is a bit redundant if map is static, but ensures fresh data is used
+            plot_func, plot_args_template = self._plot_configurations_map[plot_type_key]
+            # Reconstruct plot_args with current data
+            if plot_type_key == "position_time": plot_args = (time, x_pos, y_pos)
+            elif plot_type_key == "trajectory": plot_args = (x_pos, y_pos)
+            elif plot_type_key == "velocity_time": plot_args = (time, x_vel, y_vel)
+            elif plot_type_key == "total_speed_time": plot_args = (time, total_velocity_magnitude)
+            elif plot_type_key == "thrust_components_time": plot_args = (time, x_thrust, y_thrust)
+            elif plot_type_key == "drag_components_time": plot_args = (time, x_drag, y_drag)
+            elif plot_type_key == "acceleration_components_time": plot_args = (time, ax_data, ay_data)
+            elif plot_type_key == "total_acceleration_magnitude_time": plot_args = (time, total_acceleration_magnitude)
+            else: plot_args = plot_args_template # Fallback
+
             plot_func(ax_current, *plot_args)
 
-        # --- Clean up unused subplots for dynamic grids (if any remain) ---
-        # This part now consistently uses ax_objs_iterable and len()
+        # Clean up unused subplots for dynamic grids (if any remain)
         if num_plots_to_generate > 1 and num_plots_to_generate < len(ax_objs_iterable):
             for j in range(num_plots_to_generate, len(ax_objs_iterable)):
                 fig.delaxes(ax_objs_iterable[j])
 
-        # --- Final Layout Adjustments ---
+        # Final Layout Adjustments
         if num_plots_to_generate > 1:
             plt.tight_layout(rect=[0, 0.03, 1, 0.95])
             plt.subplots_adjust(hspace=0.55, wspace=0.3)
         else: # Single plot layout
             plt.tight_layout(rect=[0, 0.03, 1, 0.9])
 
-        return fig
+        if save_to_file:
+            filename = self._generate_plot_filename(title, plot_types)
+            filepath = os.path.join(self.plot_output_dir, filename)
+
+            try:
+                fig.savefig(filepath, dpi=300)
+                plt.close(fig) # Close the figure immediately after saving
+                plot_key = f"{title}_{'_'.join(plot_types) if isinstance(plot_types, list) else plot_types or 'all'}"
+                self.saved_plot_paths[plot_key] = filepath
+                return filepath
+            except Exception as e:
+                print(f"Error saving plot to {filepath}: {e}")
+                plt.close(fig)
+                return None
+        else:
+            return fig
+
+    def get_or_create_plot_file(self, flight_data_array, base_title, plot_types=None):
+        """
+        Checks if a plot image already exists and is tracked. If not, it generates and saves it.
+        Returns the file path.
+        """
+        # Create a consistent key for the saved_plot_paths dictionary
+        plot_key = f"{base_title}_{'_'.join(plot_types) if isinstance(plot_types, list) else plot_types or 'all'}"
+        filename = self._generate_plot_filename(base_title, plot_types)
+        expected_filepath = os.path.join(self.plot_output_dir, filename)
+
+        if plot_key in self.saved_plot_paths and os.path.exists(self.saved_plot_paths[plot_key]):
+            # print(f"Plot '{plot_key}' already exists at {self.saved_plot_paths[plot_key]}. Using existing file.")
+            return self.saved_plot_paths[plot_key]
+        elif os.path.exists(expected_filepath):
+            # File exists but wasn't tracked (e.g., from previous run of the application)
+            self.saved_plot_paths[plot_key] = expected_filepath
+            # print(f"Plot file found at {expected_filepath}. Tracking it.")
+            return expected_filepath
+        else:
+            print(f"Plot '{plot_key}' not found. Generating and saving...")
+            # Call the main plotting method to create and save the figure
+            generated_filepath = self.plot_flight_data(
+                flight_data_array=flight_data_array,
+                title=base_title,
+                plot_types=plot_types,
+                save_to_file=True # Always save when called this way
+            )
+            if generated_filepath:
+                self.saved_plot_paths[plot_key] = generated_filepath
+                print(f"Plot '{plot_key}' generated and saved to {generated_filepath}.")
+            return generated_filepath
+
+    def get_saved_plot_path(self, plot_key):
+        """Retrieves the file path for a saved plot by its unique key."""
+        return self.saved_plot_paths.get(plot_key)
+
+    def list_saved_plots(self):
+        """Lists all the unique keys and their corresponding file paths for plots."""
+        if not self.saved_plot_paths:
+            print("No plots have been saved or tracked by this plotter instance yet.")
+        else:
+            print("\n--- Saved Plots ---")
+            for key, path in self.saved_plot_paths.items():
+                print(f"- {key}: {path}")
+            print("-------------------\n")

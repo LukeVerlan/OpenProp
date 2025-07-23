@@ -62,7 +62,7 @@ def addToConfigs(configs, config, type):
 # @return True if the configuration dictionary has the required keys, False otherwise.
 def hasConfigs(config, type):
     if type == 'All':
-        required_keys = ["Propellant", "Grains", "Motor", "Nozzle"]
+        required_keys = ["Propellant", "Grains", "Motor", "Nozzle, ImpulseCalculator"]
     elif type == 'Grains':
         required_keys = ["Grains"]
     elif type == 'Propellant':
@@ -71,6 +71,9 @@ def hasConfigs(config, type):
         required_keys = ['Nozzle']
     elif type == 'Motor':
         required_keys = ['Motor']
+    elif type == 'ImpulseCalculator':
+        required_keys = ['ImpulseCalculator']
+        
         
     return all(key in config for key in required_keys)
 
