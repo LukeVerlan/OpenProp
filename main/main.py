@@ -129,14 +129,14 @@ def NozzleIteratorGUI(gui):
   popup.transient(gui) # Keep it on top of main window
   popup.grab_set()   
 
-  popup.geometry("860x720")
+  popup.geometry("950x720")
   popup.resizable(False, False) #bastard man
 
   labelFrame = tk.Frame(popup, borderwidth=1, relief="solid")
   labelFrame.grid(row=0, column=0, sticky='nsew')
 
-  # labelFrame.columnconfigure(0, weight=1)
-  # labelFrame.rowconfigure([0,1], weight=1)
+  labelFrame.columnconfigure(0, weight=1)
+  labelFrame.rowconfigure([0,1], weight=1)
 
   logoFrame= tk.Frame(popup, borderwidth=1, relief='solid')
   logoFrame.grid(row=1, column=0,sticky='nsw')
@@ -152,7 +152,7 @@ def NozzleIteratorGUI(gui):
 
   # Create a label for the Nozzle Iterator
   label = tk.Label(labelFrame, text="Nozzle Iterator Configuration")
-  label.grid(row=0, column=0, pady=1, sticky='ew')
+  label.grid(row=0, column=0, pady=1, sticky='nsew')
   
   exitButton = tk.Button(labelFrame, text="exit", command=lambda: (plt.close('all'), popup.destroy()), borderwidth=1, relief='solid')
   exitButton.grid(row=3,column=0, pady=1, sticky='nsew')
@@ -160,7 +160,7 @@ def NozzleIteratorGUI(gui):
 
   if FileUpload.hasConfigs(configs, 'All'):
     isValidLabel = tk.Label(labelFrame, text="Valid Config Found")
-    isValidLabel.grid(row=1, column=0, pady=2, padx=2, sticky='ew')
+    isValidLabel.grid(row=1, column=0, pady=2, padx=2, sticky='nsew')
 
     runButton = tk.Button(labelFrame, text="Run Nozzle Iterator",
                            command= lambda:runNozzleIterator(), borderwidth=1, relief='solid')
@@ -172,9 +172,8 @@ def NozzleIteratorGUI(gui):
       popup.update()
 
       NIconfig = copy.deepcopy(configs)
-      jsonNI = json.dumps(NIconfig, indent=4)
 
-      result = NozzleIterator.main(jsonNI)
+      result = NozzleIterator.main(NIconfig)
 
       if result is not None:
         
