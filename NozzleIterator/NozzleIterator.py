@@ -7,7 +7,6 @@
 # File handling libraries
 import sys
 import os
-import argparse
 
 # This basically says look at the file path above me, and pull my imports from there 
 repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
@@ -23,7 +22,6 @@ from motorlib.motor import Motor
 # Python libraries
 import math
 import time
-import json
 
 # Custom Classes
 from NozzleIterator.ConfigWrapper import ConfigWrapper
@@ -54,7 +52,7 @@ def main(NIconfig):
   bestConfiguration = iteration(NIconfig["Nozzle"], motor, max_threads, parallel_mode)
 
   (simRes, nozzle) = bestConfiguration
-  return iterationResult(simRes, nozzle)
+  return iterationResult(simRes, nozzle, NIconfig['Nozzle'])
 
 # Brief - Parse the configuration files
 # Parameters - config file 
@@ -227,17 +225,8 @@ def calcConvergenceHalfAngle(dia, len, throatDia, throatLen, exitHalf, exitDia):
 # Brief - print out and format the results of the motor test
 # param simRes - simulation result
 # param nozzle - winning nozzle 
-def iterationResult(simRes, nozzle):
-  
-  ui = SimulationUI(simRes, nozzle)
-
-#   print(ui.nozzleStatistics())
-#   # Print simluation peak values and plot thrust curve
-#   print(ui.peakValues())
-#   ui.exportThrustCurve("TestCSV.csv")
-#   ui.plotThrustCurve()
-
-  return ui
+def iterationResult(simRes, nozzle, NIconfig):
+  return SimulationUI(simRes, nozzle, NIconfig)
 
 
 # Brief - Determines if the simluation should be prefered to the current best

@@ -17,9 +17,11 @@ class SimulationUI:
 
   # Breif - Constructor
   # param simResult - an openMotor simulation result
-  def __init__(self, simResult, nozzle):
+  # param nozzle - a nozzle dicitonary 
+  def __init__(self, simResult, nozzle, NIconfig):
     self.simResult = simResult
     self.nozzle = nozzle
+    self.NIconfig = NIconfig
 
   # Brief - creates a plot of the thrust curve for the given simulation
   def plotSim(self):
@@ -91,12 +93,41 @@ class SimulationUI:
   # Brief - print out the statistics of the given nozzle
   # param nozzle - nozzle dictionary 
   def nozzleStatistics(self):
-    return (f"\nNozzle Dimensions\n\n"
+    return (f"\nCritical Nozzle Dimensions\n\n"
             f"    Exit Half Angle: {format(self.nozzle['divAngle'],".1f")} deg     Throat Diameter: {format(self.nozzle['throat'] * 100,".1f")} cm\n\n"
             f"    Convergence Half Angle : {format(self.nozzle['convAngle'],".1f")} deg    Throat Length: {format((self.nozzle['throatLength'] * 100),".1f")} cm\n"
             f"\n"
             f" Expansion ratio: {format(self.getExpansionRatio(self.nozzle['throat'],self.nozzle['exit']),".2f")}\n")
-      
+  
+  # returns the extended nozzle stats 
+  def extendedNozzleStatistics(self):
+
+    units ={
+      'divAngle' : 'deg',
+      'throat' : 'm',
+      'convAngle' : 'deg',
+      'throatLength': 'm',
+      'nozzleLength' : 'm',
+      'nozzleDia' : 'm'
+    }
+
+    dim = 'Complete Nozzle Statistics: \n\n'
+
+    for key in self.nozzle.keys():
+      if key in units:
+        dim += key + ' : ' + str(self.nozzle[key]) + ' - ' + units[key] + '\n'
+
+    for key in self.NIconfig.keys():
+      if key in units:
+        dim += key + ' : ' + str(self.NIconfig[key]) + ' - ' + units[key] + '\n'
+
+    dim += '\nSearch Preference   : ' + self.NIconfig['preference'] 
+    dim += '\nEfficiency          : ' + str(self.NIconfig['Efficiency'])
+    dim += '\nErosion Coefficient : ' + str(self.NIconfig['ErosionCoef'])
+    dim += '\nSlag Coefficient    : ' + str(self.NIconfig['SlagCoef'])
+
+    return dim
+
   # Brief - calculate the expansion ratio of the given nozzle
   # param throatDia - diameter of the nozzle throat
   # pararm exitDia - exit diameter of the nozzle
@@ -107,12 +138,18 @@ class SimulationUI:
   # Brief - breaks down thrust curve and exports it as a CSV
   # param filename - Name of the csv file, must end in csv
   def exportThrustCurve(self, filename):
+    if '.csv' not in filename:
+      filename += '.csv'
     with open(filename, mode='w', newline='') as file:
       writer = csv.writer(file)
       writer.writerow(["Time (s)", "Thrust (N)"])
       for t, f in zip(self.simResult.channels['time'].getData(), self.simResult.channels['force'].getData()):
         writer.writerow([t, f])
-      
 
-          
-  
+  # Breif - Saves extended nozzle stats to a txt file
+  def exportNozzleStats(self, filename):
+    if '.txt' not in filename:
+      filename += '.txt'
+    with open(filename, mode='w', newline='') as file:
+      file.write(self.extendedNozzleStatistics())
+      

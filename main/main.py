@@ -129,7 +129,7 @@ def NozzleIteratorGUI(gui):
   popup.transient(gui) # Keep it on top of main window
   popup.grab_set()   
 
-  popup.geometry("950x720")
+  popup.geometry("1061x720")
   popup.resizable(False, False) #bastard man
 
   labelFrame = tk.Frame(popup, borderwidth=1, relief="solid")
@@ -149,6 +149,11 @@ def NozzleIteratorGUI(gui):
   graphsFrame = tk.Frame(popup)
   graphsFrame.grid(row=0, column=1, sticky='nsew',rowspan=2)
   graphsFrame.rowconfigure([0,1,2,3], weight=1)
+
+  functionsFrame = tk.Frame(popup, borderwidth=1, relief='solid')
+  functionsFrame.grid(row=0, column=2, sticky='nsew', rowspan=2)
+
+  functionsFrame.columnconfigure(0,weight=1)
 
   # Create a label for the Nozzle Iterator
   label = tk.Label(labelFrame, text="Nozzle Iterator Configuration")
@@ -178,7 +183,7 @@ def NozzleIteratorGUI(gui):
       if result is not None:
         
         simImage = result.plotSim()
-        resized = simImage.resize((650, 440))
+        resized = simImage.resize((700, 440))
         tk_simImage = ImageTk.PhotoImage(resized)
 
         simSuccesslabel = tk.Label(graphsFrame, text="Simulation Results")
@@ -196,11 +201,20 @@ def NozzleIteratorGUI(gui):
 
         nozzleResults = tk.Label(graphsFrame, text=result.nozzleStatistics(), borderwidth=1, relief='solid')
         nozzleResults.grid(row=3,column=0, sticky='nsew', pady=2, columnspan=2)
+
+        printAsCSVbutton = tk.Button(functionsFrame, text='Save Thrust Curve as CSV', 
+                                     command=lambda: result.exportThrustCurve(fd.asksaveasfilename()),
+                                     borderwidth=1, relief='solid')
+        printAsCSVbutton.grid(row=0, column=0, sticky='nsew')
+
+        saveButton = tk.Button(functionsFrame, text='Save Nozzle Statistics as txt', 
+                              command=lambda: result.exportNozzleStats(fd.asksaveasfilename()),
+                              borderwidth=1, relief='solid')
+        saveButton.grid(row=1, column=0, sticky='nsew', pady = 2 )
       else:
         # Handle failed criteria like a boss
         simFailLabel = tk.Label(graphsFrame, text="No valid nozzle found, please change your settings")
         simFailLabel.grid(row=0,column=0,sticky='ew', columnspan=2)
-        pass 
 
   else:
     isValidLabel = tk.Label(labelFrame, text="No valid config found, please upload or create a config")
