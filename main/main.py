@@ -4,8 +4,6 @@
 
 # File handling libraries
 import os 
-from pathlib import Path
-import subprocess as sub
 import sys
 
 repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
@@ -31,6 +29,7 @@ import guiFunction
 # Tool Files
 from NozzleIterator import NozzleIterator
 from impulseCalc import ImpulseCalculator
+from CurativeCalculator import CurativeCalculator
 
 # @Breif Main function of OpenProp, initializes the GUI and sets up the main page
 def main(): 
@@ -112,7 +111,7 @@ def main():
   configsLabel = tk.Label(configsFrame, text="Settings")
   configsLabel.grid(row=0, column=0, sticky = "nsew")
 
-  createConfigBtn = ttk.Button(configsFrame, text="Upload or Create Configs",
+  createConfigBtn = ttk.Button(configsFrame, text="Config Settings",
                                command=lambda: handleCreateConfig(gui))
   createConfigBtn.grid(row= 1, column=0, sticky="nsew")
 
@@ -200,12 +199,13 @@ def NozzleIteratorGUI(gui):
         nozzleResults.grid(row=3,column=0, sticky='nsew', pady=2, columnspan=2)
       else:
         # Handle failed criteria like a boss
+        simFailLabel = tk.Label(graphsFrame, text="No valid nozzle found, please change your settings")
+        simFailLabel.grid(row=0,column=0,sticky='ew', columnspan=2)
         pass 
 
   else:
     isValidLabel = tk.Label(labelFrame, text="No valid config found, please upload or create a config")
     isValidLabel.grid(row=0, column=0, sticky='nsew')
-
 
   # Create a button to run the Nozzle Iterator
   
@@ -222,14 +222,11 @@ def ImpulseCalculatorGUI(gui):
   popup.transient(gui) # Keep it on top of main window
   popup.grab_set()   
 
-  popup.geometry("860x720")
+  popup.geometry("950x720")
   popup.resizable(False, False) #bastard man
 
   labelFrame = tk.Frame(popup, borderwidth=1, relief="solid")
   labelFrame.grid(row=0, column=0, sticky='nsew')
-
-  # labelFrame.columnconfigure(0, weight=1)
-  # labelFrame.rowconfigure([0,1], weight=1)
 
   logoFrame= tk.Frame(popup, borderwidth=1, relief='solid')
   logoFrame.grid(row=1, column=0,sticky='nsw')
@@ -272,7 +269,6 @@ def ImpulseCalculatorGUI(gui):
 
 # @Brief Handles the creation of the configuration GUI, allows user to create or upload configs
 # @param gui - The main GUI window
-
 def handleCreateConfig(gui):
   popup = tk.Toplevel(gui)
   
@@ -411,7 +407,7 @@ def createNozzleIterator(popup):
   guiFunction.clearWidgetColumn(popup, 1)
   labelName = "Nozzle Iterator"
   dropDown = { 
-                "Search Preference" : ["ISP", "ThrustCoef", "burnTime", "Impulse", "AvgThrust"], 
+                "Search Preference" : ["ISP", "ThrustCoef", "BurnTime", "Impulse", "AvgThrust"], 
                 "Parallel Simulation (Harder on computer)" : ["True", "False"]
               }
 

@@ -1,11 +1,11 @@
 import numpy as np
-import constants as constants
-import parameters as parameters
+import impulseCalc.constants as constants
+import impulseCalc.parameters as parameters
 import statistics 
 import math
-from elevationProperties import elevationDepProperties  # Import the elevation properties module
-from Simulation import SimulationTools  # Import the Simulation class from the Simulation module
-from graphingTools import FlightDataPlotter, display_flight_plot_on_demand 
+from impulseCalc.elevationProperties import elevationDepProperties  # Import the elevation properties module
+from impulseCalc.Simulation import SimulationTools  # Import the Simulation class from the Simulation module
+from impulseCalc.graphingTools import FlightDataPlotter, display_flight_plot_on_demand 
 import matplotlib.pyplot as plt
 
 
