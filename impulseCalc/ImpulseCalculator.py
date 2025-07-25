@@ -77,7 +77,7 @@ class ImpulseCalculator:
                     # RESTORED ORIGINAL BREAK CONDITION AND DELTAT RESET
                     if abs((highBound - lowBound))/ lowBound < imp_config["bisectionBoundPercDiff"]:  # if the bounds are too close together, break the loop
                         print("Bounds too close together, mannually adjusting lower thrust bound")
-                        lowBound = np.random.uniform(0, 1) * lowBound  # sets the low bound to a smalelr one since apogee is too high to avoid getting stuck in a loop
+                        lowBound = np.random.uniform(0.5, 1) * lowBound  # sets the low bound to a smalelr one since apogee is too high to avoid getting stuck in a loop
                         currentDeltaT = imp_config["deltaT"]
                         #print("reset deltaT" + str(currentDeltaT))
                         continue
@@ -87,7 +87,7 @@ class ImpulseCalculator:
                     # RESTORED ORIGINAL BREAK CONDITION AND DELTAT RESET
                     if abs((highBound - lowBound))/ lowBound < imp_config["bisectionBoundPercDiff"]:  # if the bounds are too close together, break the loop
                         print("Bounds too close together, mannually adjusting upper thrust bound")
-                        highBound = np.random.uniform(1,3) * highBound  # sets the high bound to a larger one since apogee is too low to avoid getting stuck in a loop
+                        highBound = np.random.uniform(1,1.5) * highBound  # sets the high bound to a larger one since apogee is too low to avoid getting stuck in a loop
                         currentDeltaT = imp_config["deltaT"]
                         #print("reset deltaT" + str(currentDeltaT))
                         continue
