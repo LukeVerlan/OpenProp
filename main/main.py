@@ -69,8 +69,8 @@ def main():
   # FOR UPLOAD DEV WORK COMMENT OUT FOR USER EXPERIENCE
   # ----------------------------------------------------
 
-  # with open('./NozzleIterator/config.json', 'r') as file:
-  #   configs = json.load(file)
+  with open('./NozzleIterator/config.json', 'r') as file:
+    configs = json.load(file)
     
 
   # initialize main GUI page

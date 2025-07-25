@@ -21,7 +21,6 @@ class ImpulseCalculator:
         takes in the parameters of the rocket and the desired apogee, iterates through a bunch of burn times and average thrust values by running a simulation for each and finding whether they reached the desired apogee. returns the thrust, burn time, and apogee for each successful run.
         Also returns the minimum, 25th, 50th, 75th, and maximum impulse values calculated from the successful runs.
         """
-        # Changed to combinedSuccessfulData to store ((summary_tuple), sim_data_array)
         imp_config = self.simulation.configDict
         combinedSuccessfulData = []
         
@@ -50,7 +49,7 @@ class ImpulseCalculator:
                 print("check")
             except ValueError:  # if the set is empty, set highBound to a default value
                 print(str(avgThrust) + "    " + str(burnTime))
-                highBound = self.simulation.getWetMass(avgThrust, burnTime) * constants.standardGravity * 10**3 # default big value if no successful runs yet
+                highBound = self.simulation.getWetMass(avgThrust, burnTime) * constants.standardGravity * 10**4 # default big value if no successful runs yet
 
             # RESTORED ORIGINAL BREAK CONDITION FOR OUTER LOOP
             if avgThrust < self.simulation.getWetMass(avgThrust, burnTime) * constants.standardGravity * imp_config["minAvgTtW"] and not len(combinedSuccessfulData) == 0 :
@@ -70,26 +69,28 @@ class ImpulseCalculator:
                 apogee, placeHolder = self.simulation.runsimulation(currentDeltaT, burnTime, avgThrust, bool(False)) # runs the sim!!!!! with the currents values!!
                 print(str(count) + ". apogee: " + str(apogee) + ", avgThrust: " + str(avgThrust))
                 count += 1
-                currentDeltaT = .9 * currentDeltaT #cuts deltaT down every single run and adjusts deltaT smoothly to avoid sudden changes in apo due to euler stepper quirks. important for accurate results
+                currentDeltaT = .8 * currentDeltaT #cuts deltaT down every single run and adjusts deltaT smoothly to avoid sudden changes in apo due to sim quirks. important for accurate results
 
                 if apogee >= (1 + imp_config["apogeeThreshold"]) * imp_config["desiredApogee"]:
                     highBound = avgThrust  # if the apogee is too high, set the high bound to the current average thrust
                     #print("apogee too high, setting high bound to: " + str(highBound))
                     # RESTORED ORIGINAL BREAK CONDITION AND DELTAT RESET
                     if abs((highBound - lowBound))/ lowBound < imp_config["bisectionBoundPercDiff"]:  # if the bounds are too close together, break the loop
-                        print("Bounds too close together, breaking loop")
+                        print("Bounds too close together, mannually adjusting lower thrust bound")
+                        lowBound = np.random.uniform(0, 1) * lowBound  # sets the low bound to a smalelr one since apogee is too high to avoid getting stuck in a loop
                         currentDeltaT = imp_config["deltaT"]
                         #print("reset deltaT" + str(currentDeltaT))
-                        break
+                        continue
                 elif apogee <= (1 - imp_config["apogeeThreshold"]) * imp_config["desiredApogee"]: 
                     lowBound = avgThrust  # if the apogee is too low, set the low bound to the current average thrust
                     #print("apogee too low, setting low bound to: " + str(lowBound))
                     # RESTORED ORIGINAL BREAK CONDITION AND DELTAT RESET
                     if abs((highBound - lowBound))/ lowBound < imp_config["bisectionBoundPercDiff"]:  # if the bounds are too close together, break the loop
-                        print("Bounds too close together, breaking loop")
+                        print("Bounds too close together, mannually adjusting upper thrust bound")
+                        highBound = np.random.uniform(1,3) * highBound  # sets the high bound to a larger one since apogee is too low to avoid getting stuck in a loop
                         currentDeltaT = imp_config["deltaT"]
                         #print("reset deltaT" + str(currentDeltaT))
-                        break
+                        continue
                 else: # This means apogee is within the desired threshold, so it's a successful run
                     apogee2, simData = self.simulation.runsimulation(currentDeltaT, burnTime, avgThrust, bool(True))
                     # Store successful runs: ((avgThrust, burnTime, apogee), simData_array)

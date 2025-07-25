@@ -82,7 +82,7 @@
         "railAngle" : 0.05235,
         "launchSiteElevation" : 848.0,
         "dragArea" : 0.0176,
-        "dragCoefficient" : 0.75,
+        "dragCoefficient" : 1.0,
         "noMotorMass" : 16.64,
         "specificImpulse" : 2255.495,
         "desiredApogee" : 3048.0,
@@ -90,7 +90,7 @@
         "burnTimeRange" : 0.4,
         "burnTimeStep" : 0.1,
         "minAvgTtW" : 6.0,
-        "bisectionBoundPercDiff" : 0.00001,
+        "bisectionBoundPercDiff" : 0.00000000000000000000000000000001,
         "deltaT" : 0.05
         
     }
