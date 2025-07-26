@@ -66,8 +66,8 @@ def main():
   # FOR UPLOAD DEV WORK COMMENT OUT FOR USER EXPERIENCE
   # ---------------------------------------------------
 
-  # with open('./NozzleIterator/config.json', 'r') as file:
-  #   configs = json.load(file)
+  with open('./NozzleIterator/config.json', 'r') as file:
+    configs = json.load(file)
     
 
   # initialize main GUI page
@@ -237,9 +237,6 @@ def NozzleIteratorGUI(gui):
   def runNozzleIterator():
       # Remove placeholder
       placeholder_canvas.itemconfig(text_id, text='Running...')
-      
-      runningLabel = tk.Label(graphsFrame, text="Running...")
-      runningLabel.grid(row=0,column=0,sticky='ew', columnspan=2)
       popup.update()
 
       NIconfig = copy.deepcopy(configs)
