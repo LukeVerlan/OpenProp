@@ -37,7 +37,6 @@ from CurativeCalculator import CurativeCalculator
 # @Breif Main function of OpenProp, initializes the GUI and sets up the main page
 def main(): 
 
-
   global configs
 
   configs = {}
@@ -63,12 +62,12 @@ def main():
         }
     }
   
-  # ----------------------------------------------------
+  # ---------------------------------------------------
   # FOR UPLOAD DEV WORK COMMENT OUT FOR USER EXPERIENCE
-  # ----------------------------------------------------
+  # ---------------------------------------------------
 
-  with open('./NozzleIterator/config.json', 'r') as file:
-    configs = json.load(file)
+  # with open('./NozzleIterator/config.json', 'r') as file:
+  #   configs = json.load(file)
     
 
   # initialize main GUI page
@@ -136,7 +135,7 @@ def NozzleIteratorGUI(gui):
   popup.transient(gui) # Keep it on top of main window
   popup.grab_set()   
 
-  popup.geometry("1061x720")
+  popup.geometry("1250x720")
   popup.resizable(False, False) #bastard man
 
   labelFrame = tk.Frame(popup, borderwidth=1, relief="solid")
@@ -163,22 +162,82 @@ def NozzleIteratorGUI(gui):
   functionsFrame.columnconfigure(0,weight=1)
 
   # Create a label for the Nozzle Iterator
-  label = tk.Label(labelFrame, text="Nozzle Iterator Configuration")
+  label = tk.Label(labelFrame, text="Nozzle Iterator Configuration", font=('Arial',10,'bold'))
   label.grid(row=0, column=0, pady=1, sticky='nsew')
   
   exitButton = tk.Button(labelFrame, text="exit", command=lambda: (plt.close('all'), popup.destroy()), borderwidth=1, relief='solid')
   exitButton.grid(row=3,column=0, pady=1, sticky='nsew')
-  
+
+  # Predefine placeholders for layout consistency
+  isValidLabel = tk.Label(labelFrame, text="")
+  isValidLabel.grid(row=1, column=0, pady=2, padx=2, sticky='nsew')
+
+  runButton = tk.Button(labelFrame, text="Run Nozzle Iterator", state='disabled')
+  runButton.grid(row=2, column=0, sticky='nsew')
+
+  # Create a fixed-size Canvas as placeholder for the graph
+  placeholder_canvas = tk.Canvas(graphsFrame, width=700, height=440, highlightthickness=0)
+  placeholder_canvas.grid(row=1, column=0, sticky='nsew', pady=2, columnspan=2)
+  text_id = placeholder_canvas.create_text(350, 220, text="No simulation results yet", font=('Arial', 16), fill='gray')
+
+
+  # Increase scroll window height
+  configText = tk.Text(functionsFrame, height=30, width=40, wrap='word', borderwidth=1, relief='solid')
+  configText.grid(row=2, column=0, sticky='nsew', pady=(10, 0))
+
+  scroll = tk.Scrollbar(functionsFrame, command=configText.yview)
+  scroll.grid(row=2, column=1, sticky='ns', pady=(10, 0))
+  configText.config(yscrollcommand=scroll.set)
+
+  # Make sure it's available in other scopes
+  configText.config(state='disabled')
+
 
   if FileUpload.hasConfigs(configs, 'NozzleIterator'):
-    isValidLabel = tk.Label(labelFrame, text="Valid Config Found")
-    isValidLabel.grid(row=1, column=0, pady=2, padx=2, sticky='nsew')
+    isValidLabel.config(text="Valid Config Found", fg="green")
+    runButton.config(state='normal', command=lambda: runNozzleIterator())
 
-    runButton = tk.Button(labelFrame, text="Run Nozzle Iterator",
-                           command= lambda:runNozzleIterator(), borderwidth=1, relief='solid')
-    runButton.grid(row=2,column=0,sticky='nsew')
+    unit_map = {
+        "minDia": "m",
+        "maxDia": "m",
+        "minLen": "m",
+        "maxLen": "m",
+        "exitHalf": "deg",
+        "SlagCoef": "(m·Pa)/s",
+        "ErosionCoef": "s/(m·Pa)",
+        "Efficiency": "",
+        "nozzleDia": "m",
+        "nozzleLength": "m",
+        "minHalfConv": "deg",
+        "maxHalfConv": "deg",
+        "iteration_step_size": "m",
+        "preference": "",
+        "parallel_mode": "",
+        "iteration_threads": "",
+        "exitDia": "m"
+    }
 
-    def runNozzleIterator():
+    # Clear and update the config text
+    configText.config(state='normal')
+    configText.delete('1.0', tk.END)
+    configText.insert(
+        '1.0',
+        '\n'.join([
+            f"{key} : {value} {unit_map.get(key, '')}".strip()
+            for key, value in configs["Nozzle"].items()
+        ])
+    )
+    configText.config(state='disabled')
+
+  else:
+    isValidLabel.config(text='Invalid Config', fg="red")
+    runButton.config(state='disabled')
+
+
+  def runNozzleIterator():
+      # Remove placeholder
+      placeholder_canvas.itemconfig(text_id, text='Running...')
+      
       runningLabel = tk.Label(graphsFrame, text="Running...")
       runningLabel.grid(row=0,column=0,sticky='ew', columnspan=2)
       popup.update()
@@ -187,14 +246,16 @@ def NozzleIteratorGUI(gui):
 
       result = NozzleIterator.main(NIconfig)
 
+      simSuccesslabel = tk.Label(graphsFrame, text="")
+      simSuccesslabel.grid(row=0,column=0,sticky='ew', columnspan=2)
+
       if result is not None:
         
         simImage = result.plotSim()
         resized = simImage.resize((700, 440))
         tk_simImage = ImageTk.PhotoImage(resized)
 
-        simSuccesslabel = tk.Label(graphsFrame, text="Simulation Results")
-        simSuccesslabel.grid(row=0,column=0,sticky='ew', columnspan=2)
+        simSuccesslabel.config(text="Simulation Results")
 
         simGraph = tk.Label(graphsFrame, image=tk_simImage, borderwidth=1, relief='solid')
         simGraph.grid(row=1,column=0, sticky='nsew', pady=2, columnspan=2)
@@ -220,16 +281,8 @@ def NozzleIteratorGUI(gui):
         saveButton.grid(row=1, column=0, sticky='nsew', pady = 2 )
       else:
         # Handle failed criteria like a boss
-        simFailLabel = tk.Label(graphsFrame, text="No valid nozzle found, please change your settings")
-        simFailLabel.grid(row=0,column=0,sticky='ew', columnspan=2)
-
-  else:
-    isValidLabel = tk.Label(labelFrame, text="No valid config found, please upload or create a config")
-    isValidLabel.grid(row=0, column=0, sticky='nsew')
-
-  # Create a button to run the Nozzle Iterator
+        simSuccesslabel.config(text="No valid nozzle found, please change your settings")
   
-
 def ImpulseCalculatorGUI(gui):
 
   OPimDir = "main/OpenPropLogo.png"
@@ -243,7 +296,7 @@ def ImpulseCalculatorGUI(gui):
   popup.grab_set()   
 
   popup.geometry("950x720")
-  popup.resizable(False, False) #bastard man
+  popup.resizable(False, False) # bastard man
 
   labelFrame = tk.Frame(popup, borderwidth=1, relief="solid")
   labelFrame.grid(row=0, column=0, sticky='nsew')
