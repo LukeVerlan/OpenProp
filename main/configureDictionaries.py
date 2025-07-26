@@ -1,4 +1,3 @@
-import re
 
 # @breif Configures the propellant dictionary with the given entry values.
 # @param configs The dictionary containing the current configurations.
