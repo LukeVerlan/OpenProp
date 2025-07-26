@@ -136,18 +136,19 @@ def saveEntries(configs, entries, configName, type, frame):
     entryVals = {}
     for field in entries.keys():
       entryVals[field] = entries[field].get()
-    
-    if configName == "Propellant Config":
-      configureDictionaries.configurePropellantDict(configs, entryVals)
-    elif configName.startswith("OpenMotor"):
-      configureDictionaries.configureOMDict(configs, entryVals)
-    elif configName == "Nozzle Iterator":
-      configureDictionaries.configureNIDict(configs, entryVals)
-    elif configName == "Grain":
-      configureDictionaries.configureGrainDict(configs, entryVals, type)
-    elif configName == "Impulse Calculator Config":
-      configureDictionaries.configureImpulseCalcDict(configs, entryVals)
-      
+
+    if configureDictionaries.verifyEntryBoxes(entryVals):    
+      if configName == "Propellant Config":
+        configureDictionaries.configurePropellantDict(configs, entryVals)
+      elif configName.startswith("OpenMotor"):
+        configureDictionaries.configureOMDict(configs, entryVals)
+      elif configName == "Nozzle Iterator":
+        configureDictionaries.configureNIDict(configs, entryVals)
+      elif configName == "Grain":
+        configureDictionaries.configureGrainDict(configs, entryVals, type)
+      elif configName == "Impulse Calculator Config":
+        configureDictionaries.configureImpulseCalcDict(configs, entryVals)
+        
       successLabel = tk.Label(frame, text ='Save Successful')
       successLabel.grid(row = 10, column=5, sticky= 'se')
     else:

@@ -42,7 +42,7 @@ def commitConfig(configs, frame, type):
 # @param type The type of configuration being uploaded (e.g., 'All', 'Grains', 'Motor', 'Nozzle', 'Propellant').
 def addToConfigs(configs, config, type):
 
-  if type == 'All':
+  if type == 'NozzleIterator':
     configs["Grains"] = config["Grains"]
     configs["Motor"] = config["Motor"]
     configs["Nozzle"] = config["Nozzle"]
@@ -63,6 +63,8 @@ def addToConfigs(configs, config, type):
 def hasConfigs(config, type):
     if type == 'All':
         required_keys = ["Propellant", "Grains", "Motor", "Nozzle, ImpulseCalculator"]
+    elif type == 'NozzleIterator':
+        required_keys = ["Propellant", "Grains", "Motor", "Nozzle"]
     elif type == 'Grains':
         required_keys = ["Grains"]
     elif type == 'Propellant':

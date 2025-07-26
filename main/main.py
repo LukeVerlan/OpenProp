@@ -170,7 +170,7 @@ def NozzleIteratorGUI(gui):
   exitButton.grid(row=3,column=0, pady=1, sticky='nsew')
   
 
-  if FileUpload.hasConfigs(configs, 'All'):
+  if FileUpload.hasConfigs(configs, 'NozzleIterator'):
     isValidLabel = tk.Label(labelFrame, text="Valid Config Found")
     isValidLabel.grid(row=1, column=0, pady=2, padx=2, sticky='nsew')
 
