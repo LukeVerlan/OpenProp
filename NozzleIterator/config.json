@@ -22,16 +22,7 @@
             "diameter" : 0.1397,
             "length" : 0.4064,
             "inhibitedEnds" : "Neither"
-        },     
-
-        {
-            "type" : "BATES",
-            "coreDiameter" : 0.0508,
-            "diameter" : 0.1397,
-            "length" : 0.4064,
-            "inhibitedEnds" : "Neither"
-        }   
-
+        }
     ],
 
     "Nozzle": {

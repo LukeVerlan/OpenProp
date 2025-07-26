@@ -7,7 +7,6 @@
 # File handling libraries
 import sys
 import os
-import argparse
 
 # This basically says look at the file path above me, and pull my imports from there 
 repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
@@ -23,7 +22,6 @@ from motorlib.motor import Motor
 # Python libraries
 import math
 import time
-import json
 
 # Custom Classes
 from NozzleIterator.ConfigWrapper import ConfigWrapper
@@ -43,26 +41,18 @@ def frange(start, stop, step):
     return vals
 
 # Brief - Parses the config given to the nozzle files and runs the simluation flow
-def main(jsonFile):
+def main(NIconfig):
 
-#   # Parses command line arguments, nessecary for integrating with main
-#   parser = argparse.ArgumentParser(description="Nozzle config parser") # create cmd parser 
-#   parser.add_argument("config", help="Path to the config JSON file") # grab configfilepath
-#   args = parser.parse_args() # Parse those arguments
-#   jsonFile = args.config # give me the file at the end of that directory
-
-  configFile = json.loads(jsonFile) # Load the config file as a json object
-
-  motor = setupProp(configFile)
+  motor = setupProp(NIconfig)
 
   # From config or CLI
-  parallel_mode = configFile.get("parallel_mode", True)
-  max_threads = configFile.get("iteration_threads", None)
+  parallel_mode = NIconfig['Nozzle']['parallel_mode']
+  max_threads = NIconfig['Nozzle']['iteration_threads']
 
-  bestConfiguration = iteration(configFile["Nozzle"], motor, max_threads, parallel_mode)
+  bestConfiguration = iteration(NIconfig["Nozzle"], motor, max_threads, parallel_mode)
 
   (simRes, nozzle) = bestConfiguration
-  return iterationResult(simRes, nozzle)
+  return iterationResult(simRes, nozzle, NIconfig['Nozzle'])
 
 # Brief - Parse the configuration files
 # Parameters - config file 
@@ -235,17 +225,8 @@ def calcConvergenceHalfAngle(dia, len, throatDia, throatLen, exitHalf, exitDia):
 # Brief - print out and format the results of the motor test
 # param simRes - simulation result
 # param nozzle - winning nozzle 
-def iterationResult(simRes, nozzle):
-  
-  ui = SimulationUI(simRes, nozzle)
-
-#   print(ui.nozzleStatistics())
-#   # Print simluation peak values and plot thrust curve
-#   print(ui.peakValues())
-#   ui.exportThrustCurve("TestCSV.csv")
-#   ui.plotThrustCurve()
-
-  return ui
+def iterationResult(simRes, nozzle, NIconfig):
+  return SimulationUI(simRes, nozzle, NIconfig)
 
 
 # Brief - Determines if the simluation should be prefered to the current best

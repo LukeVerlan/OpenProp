@@ -35,7 +35,7 @@ def createSettingsPage(configs, labelName, fields, popup, dropDown=None, default
 
   entries = createLabledEntryBoxes(frame, fields, dropDown, defaults)
 
-  saveButton = tk.Button(frame, text="Save Config", command=lambda: saveEntries(configs, entries, labelName, None),
+  saveButton = tk.Button(frame, text="Save Config", command=lambda: saveEntries(configs, entries, labelName, None, frame),
                         borderwidth=1, relief="solid")
   
   saveButton.grid(row=9,column=5, padx=4, pady=4, sticky = 'se')
@@ -131,7 +131,7 @@ def createLabledEntryBoxes(parent, fields, dropDown=None, defaults=None):
 # @param entries The dictionary containing the entry boxes.
 # @param configName The name of the configuration being saved.
 # @param type The type of configuration being saved (e.g., 'Grains', 'Motor', 'Nozzle', 'Propellant').
-def saveEntries(configs, entries, configName, type):
+def saveEntries(configs, entries, configName, type, frame):
     
     entryVals = {}
     for field in entries.keys():
@@ -147,5 +147,10 @@ def saveEntries(configs, entries, configName, type):
       configureDictionaries.configureGrainDict(configs, entryVals, type)
     elif configName == "Impulse Calculator Config":
       configureDictionaries.configureImpulseCalcDict(configs, entryVals)
+      
+      successLabel = tk.Label(frame, text ='Save Successful')
+      successLabel.grid(row = 10, column=5, sticky= 'se')
+    else:
+      failureLabel = tk.Label(frame, text ='Invalid Entries ')
+      failureLabel.grid(row = 10, column=5, sticky= 'se')
 
-    print(configs)

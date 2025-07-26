@@ -1,3 +1,4 @@
+
 # @breif Configures the propellant dictionary with the given entry values.
 # @param configs The dictionary containing the current configurations.
 # @param entryVals The dictionary containing the entry values for the propellant configuration.
@@ -80,7 +81,6 @@ def configureGrainDict(configs, entryVals, type):
    configs["Grains"][-1]['finLength'] = float(entryVals["Fin Length - m"])
    configs["Grains"][-1]['finWidth'] = float(entryVals["Fin Width - m"])
 
-
 def configureImpulseCalcDict(configs, entryVals):
     configs["ImpulseCalculator"] = {}
     configs["ImpulseCalculator"]["surfacePressure"] = float(entryVals["Surface Pressure - Pa"])
@@ -99,3 +99,30 @@ def configureImpulseCalcDict(configs, entryVals):
     configs["ImpulseCalculator"]["minAvgTtW"] = float(entryVals["Minimum Average Thrust to Weight"])
     configs["ImpulseCalculator"]["bisectionBoundPercDiff"] = float(entryVals["Idk bro just put 0.0001"])
     configs["ImpulseCalculator"]["deltaT"] = float(entryVals["Flight Simulation mininum time step - s"])
+
+# @brief Verifies that all entry boxes are of the correct values
+# @param entryvals - entry boxes
+# @return true if valid false if invald 
+def verifyEntryBoxes(entryvals):
+  # Set of keys that should be treated as strings (words), not numbers
+  string_keys = {
+    "Propellant Name",
+    "Search Preference",
+    'type',
+  }
+
+  def is_number(s):
+    try:
+      float(s)
+      return True
+    except ValueError:
+      return False
+
+  for key, val in entryvals.items():
+    if key in string_keys:
+      continue
+
+    if not is_number(val):
+      return False
+
+  return True
