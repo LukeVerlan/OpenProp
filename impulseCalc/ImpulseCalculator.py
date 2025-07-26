@@ -39,14 +39,12 @@ class ImpulseCalculator:
             # RESTORED ORIGINAL lowBound / highBound INITIALIZATION LOGIC
             try: # sets upper bound to the last/smallest thrust that has passed. always works since burn time up --> next thrust must be lower
                 lowBound = min((set([row[0][0] for row in combinedSuccessfulData])))/3 # Access avgThrust from the summary tuple
-                print("check")
             except ValueError:  # if the set is empty, set to minTtW value
                 print(str(avgThrust) + "    " + str(burnTime))
                 lowBound = self.simulation.getWetMass(avgThrust, burnTime) * constants.standardGravity * imp_config["burnTimeStep"] # default big value if no successful runs yet
 
             try: # sets upper bound to the last/smallest thrust that has passed. always works since burn time up --> next thrust must be lower
                 highBound = min((set([row[0][0] for row in combinedSuccessfulData]))) # Access avgThrust from the summary tuple
-                print("check")
             except ValueError:  # if the set is empty, set highBound to a default value
                 print(str(avgThrust) + "    " + str(burnTime))
                 highBound = self.simulation.getWetMass(avgThrust, burnTime) * constants.standardGravity * 10**4 # default big value if no successful runs yet
@@ -54,10 +52,6 @@ class ImpulseCalculator:
             # RESTORED ORIGINAL BREAK CONDITION FOR OUTER LOOP
             if avgThrust < self.simulation.getWetMass(avgThrust, burnTime) * constants.standardGravity * imp_config["minAvgTtW"] and not len(combinedSuccessfulData) == 0 :
                 break
-            
-            # if abs((highBound - lowBound))/ lowBound < parameters.bisectionBoundPercDiff:  # if the bounds are too close together, break the loop
-            #    print("Bounds too close together, breaking loop")
-            #    break
 
             count = 0
             print("Starting new iteration with burn time = " + str(burnTime))
@@ -65,7 +59,6 @@ class ImpulseCalculator:
             # RESTORED ORIGINAL INNER WHILE LOOP CONDITION
             while apogee <= (1 + imp_config["apogeeThreshold"]) * imp_config["desiredApogee"] or apogee >= (1 - imp_config["apogeeThreshold"]) * imp_config["desiredApogee"]:  # loop until the apogee is within 5% of the desired apogee
                 avgThrust = (lowBound + highBound)/2  # set the average thrust to the midpoint of the bounds
-                #print("running sim with deltaT " +str(currentDeltaT))
                 apogee, placeHolder = self.simulation.runsimulation(currentDeltaT, burnTime, avgThrust, bool(False)) # runs the sim!!!!! with the currents values!!
                 print(str(count) + ". apogee: " + str(apogee) + ", avgThrust: " + str(avgThrust))
                 count += 1
@@ -73,33 +66,26 @@ class ImpulseCalculator:
 
                 if apogee >= (1 + imp_config["apogeeThreshold"]) * imp_config["desiredApogee"]:
                     highBound = avgThrust  # if the apogee is too high, set the high bound to the current average thrust
-                    #print("apogee too high, setting high bound to: " + str(highBound))
-                    # RESTORED ORIGINAL BREAK CONDITION AND DELTAT RESET
                     if abs((highBound - lowBound))/ lowBound < imp_config["bisectionBoundPercDiff"]:  # if the bounds are too close together, break the loop
                         print("Bounds too close together, mannually adjusting lower thrust bound")
                         lowBound = np.random.uniform(0.5, 1) * lowBound  # sets the low bound to a smalelr one since apogee is too high to avoid getting stuck in a loop
                         currentDeltaT = imp_config["deltaT"]
-                        #print("reset deltaT" + str(currentDeltaT))
                         continue
                 elif apogee <= (1 - imp_config["apogeeThreshold"]) * imp_config["desiredApogee"]: 
                     lowBound = avgThrust  # if the apogee is too low, set the low bound to the current average thrust
-                    #print("apogee too low, setting low bound to: " + str(lowBound))
                     # RESTORED ORIGINAL BREAK CONDITION AND DELTAT RESET
                     if abs((highBound - lowBound))/ lowBound < imp_config["bisectionBoundPercDiff"]:  # if the bounds are too close together, break the loop
                         print("Bounds too close together, mannually adjusting upper thrust bound")
                         highBound = np.random.uniform(1,1.5) * highBound  # sets the high bound to a larger one since apogee is too low to avoid getting stuck in a loop
                         currentDeltaT = imp_config["deltaT"]
-                        #print("reset deltaT" + str(currentDeltaT))
                         continue
                 else: # This means apogee is within the desired threshold, so it's a successful run
                     apogee2, simData = self.simulation.runsimulation(currentDeltaT, burnTime, avgThrust, bool(True))
                     # Store successful runs: ((avgThrust, burnTime, apogee), simData_array)
                     combinedSuccessfulData.append(((avgThrust, burnTime, apogee2), simData))
                     
-                    #print("delta T for successful sim " + str(currentDeltaT))
                     print("logged successful run with avgThrust: " + str(avgThrust) + " burnTime: " + str(burnTime) + " apogee: " + str(apogee))
                     currentDeltaT = imp_config["deltaT"]
-                    #print("reset deltaT " + str(currentDeltaT))
                     break # Break the inner loop since a successful thrust was found for this burnTime
 
         # Sort the combined data by avgThrust (the first element of the summary tuple's first element)

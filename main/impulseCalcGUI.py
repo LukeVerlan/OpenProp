@@ -127,29 +127,28 @@ class ImpulseCalculatorApp:
         self.popup.title("Impulse Calculator")
         self.popup.protocol("WM_DELETE_WINDOW", self._on_popup_close) # Custom close handler
 
-        # --- Grid Configuration for popup ---
+        # Grid Configuration for popup
         self.popup.rowconfigure(0, weight=1) # labelFrame and graphsFrame top portion
         self.popup.rowconfigure(1, weight=0) # logoFrame takes fixed height
         self.popup.columnconfigure(0, weight=0) # Left panel fixed width (content driven)
         self.popup.columnconfigure(1, weight=3) # Right panel for graphs expands
 
-        # --- Left Panel Frames ---
+        #Left Panel Frames
         self.labelFrame = tk.Frame(self.popup, borderwidth=1, relief="solid")
         self.labelFrame.grid(row=0, column=0, sticky='nsew', padx=5, pady=5)
         self.labelFrame.columnconfigure(0, weight=1) # Allow content to expand horizontally
-        # No rowconfigure here; rows will size to content vertically
 
         self.logoFrame = tk.Frame(self.popup, borderwidth=1, relief='solid')
         self.logoFrame.grid(row=1, column=0, sticky='nsew', padx=5, pady=5)
         self.logoFrame.columnconfigure(0, weight=1)
 
-        # --- Right Panel Frame ---
+        # Right Panel Frame
         self.graphsFrame = tk.Frame(self.popup, borderwidth=1, relief="solid")
         self.graphsFrame.grid(row=0, column=1, sticky='nsew', rowspan=2, padx=5, pady=5)
         self.graphsFrame.columnconfigure(0, weight=1) # Allow content to expand horizontally
         self.graphsFrame.rowconfigure([0, 1, 2, 3, 4, 5], weight=1) # Rows for dynamic content, row 4 for plot
 
-        # --- Left Panel Content ---
+        # Left Panel Content
         # Impulse Calculator Configuration Label
         tk.Label(self.labelFrame, text="Impulse Calculator Configuration", font=("Arial", 12, "bold")).grid(row=0, column=0, pady=5, sticky='ew')
 
@@ -170,7 +169,7 @@ class ImpulseCalculatorApp:
         tk.Button(self.labelFrame, text="Exit", command=self._on_popup_close, borderwidth=1, relief='solid',
                   font=("Arial", 10)).grid(row=3, column=0, pady=5, sticky='nsew')
 
-        # --- Summary Display Area ---
+        # Summary Display Area
         self.summary_frame = tk.LabelFrame(self.labelFrame, text="Simulation Summary", borderwidth=1, relief="groove")
         self.summary_frame.grid(row=4, column=0, sticky='nsew', padx=5, pady=5)
         self.summary_frame.columnconfigure(0, weight=1) # Allow content to expand
