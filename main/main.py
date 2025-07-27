@@ -29,6 +29,7 @@ import guiFunction
 # Tool Files
 from NozzleIterator import NozzleIterator
 from impulseCalcGUI import ImpulseCalculatorApp
+#from ThrustCurveFlightSimGUI import ThrustCurveFlightSimApp
 from impulseCalc.graphingTools import FlightDataPlotter
 from impulseCalc import ImpulseCalculator # Module for ImpulseCalculator.main
 
@@ -66,8 +67,8 @@ def main():
   # FOR UPLOAD DEV WORK COMMENT OUT FOR USER EXPERIENCE
   # ---------------------------------------------------
 
-  # with open('./NozzleIterator/config.json', 'r') as file:
-  #   configs = json.load(file)
+  with open('./NozzleIterator/config.json', 'r') as file:
+    configs = json.load(file)
     
 
   # initialize main GUI page
@@ -104,7 +105,8 @@ def main():
   curativeBtn = ttk.Button(functionsFrame, text="Curative Calculator")
   curativeBtn.grid(row=3, column=0, sticky="nsew")
 
-  seriesBtn = ttk.Button(functionsFrame, text="Nozzle Iterator & Impulse Calculator")
+  seriesBtn = ttk.Button(functionsFrame, text="Flight Simulation w/ Thust Curve", 
+                         command=lambda: ThrustCurveFlightSim(gui, configs))
   seriesBtn.grid(row=4,column=0, sticky="nsew")
 
   # Configurations 
