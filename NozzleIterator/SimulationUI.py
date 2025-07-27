@@ -1,7 +1,6 @@
 # SIMULATION UI
 #
 # This class is used to save simulation results and present the Data clealy. 
-
 import csv 
 
 # math handling modules
