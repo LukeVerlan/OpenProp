@@ -282,63 +282,6 @@ def NozzleIteratorGUI(gui):
       else:
         # Handle failed criteria like a boss
         simSuccesslabel.config(text="No valid nozzle found, please change your settings")
-  
-def ImpulseCalculatorGUI(gui):
-
-  OPimDir = "main/OpenPropLogo.png"
-  OPim = Image.open(OPimDir)
-  resizedOPim = OPim.resize((200,625))
-  tk_OPim = ImageTk.PhotoImage(resizedOPim)
-
-  popup=tk.Toplevel()
-
-  popup.transient(gui) # Keep it on top of main window
-  popup.grab_set()   
-
-  popup.geometry("950x720")
-  popup.resizable(False, False) # bastard man
-
-  labelFrame = tk.Frame(popup, borderwidth=1, relief="solid")
-  labelFrame.grid(row=0, column=0, sticky='nsew')
-
-  logoFrame= tk.Frame(popup, borderwidth=1, relief='solid')
-  logoFrame.grid(row=1, column=0,sticky='nsw')
-
-  logoLabel = tk.Label(logoFrame,image=tk_OPim)
-  logoLabel.grid(row=0,column=0, sticky='nsew')
-
-  logoLabel.image = tk_OPim
-
-  graphsFrame = tk.Frame(popup)
-  graphsFrame.grid(row=0, column=1, sticky='nsew',rowspan=2)
-  graphsFrame.rowconfigure([0,1,2,3], weight=1)
-
-  # Create a label for the Nozzle Iterator
-  label = tk.Label(labelFrame, text="Impulse Calculator Configuration")
-  label.grid(row=0, column=0, pady=1, sticky='ew')
-  
-  exitButton = tk.Button(labelFrame, text="exit", command=lambda: (plt.close('all'), popup.destroy()), borderwidth=1, relief='solid')
-  exitButton.grid(row=3,column=0, pady=1, sticky='nsew')
-  
-  if FileUpload.hasConfigs(configs, 'All'):
-    isValidLabel = tk.Label(labelFrame, text="Valid Config Found")
-    isValidLabel.grid(row=1, column=0, pady=2, padx=2, sticky='ew')
-
-    runButton = tk.Button(labelFrame, text="Run Nozzle Iterator",
-                           command= lambda:runImpulseCalcualtor(), borderwidth=1, relief='solid')
-    runButton.grid(row=2,column=0,sticky='nsew')
-
-
-  def runImpulseCalcualtor():
-      runningLabel = tk.Label(graphsFrame, text="Running...")
-      runningLabel.grid(row=0,column=0,sticky='ew', columnspan=2)
-      popup.update()
-
-      NIconfig = copy.deepcopy(configs)
-      jsonNI = json.dumps(NIconfig, indent=4)
-
-      result = ImpulseCalculator.main(jsonNI)
-    
 
 # @Brief Handles the creation of the configuration GUI, allows user to create or upload configs
 # @param gui - The main GUI window
