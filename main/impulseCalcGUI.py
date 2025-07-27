@@ -241,6 +241,8 @@ class ImpulseCalculatorApp:
         self.plot_display_label.grid(row=4, column=0, sticky='nsew', padx=5, pady=5, rowspan=2)
         self.graphsFrame.rowconfigure(4, weight=5) # Gives this row more vertical space
         self.graphsFrame.rowconfigure(5, weight=1) # Can be used for a scrollbar or other controls
+        messagebox.showwarning("Files Saved Locally", "Warning: Impulse Calculator saves graphs locally as image files in a temporary flight_plots folder. There is currently no way to disable this functionality. The folder is fully cleared upon closing Impulse Calcuator")
+
 
 
     def runImpulseCalcualtor(self):

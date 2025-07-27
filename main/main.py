@@ -29,6 +29,7 @@ import guiFunction
 # Tool Files
 from NozzleIterator import NozzleIterator
 from impulseCalcGUI import ImpulseCalculatorApp
+#from ThrustCurveFlightSimGUI import ThrustCurveFlightSimApp
 from impulseCalc.graphingTools import FlightDataPlotter
 from impulseCalc import ImpulseCalculator # Module for ImpulseCalculator.main
 
@@ -66,8 +67,8 @@ def main():
   # FOR UPLOAD DEV WORK COMMENT OUT FOR USER EXPERIENCE
   # ---------------------------------------------------
 
-  # with open('./NozzleIterator/config.json', 'r') as file:
-  #   configs = json.load(file)
+  with open('./NozzleIterator/config.json', 'r') as file:
+    configs = json.load(file)
     
 
   # initialize main GUI page
@@ -104,7 +105,8 @@ def main():
   curativeBtn = ttk.Button(functionsFrame, text="Curative Calculator")
   curativeBtn.grid(row=3, column=0, sticky="nsew")
 
-  seriesBtn = ttk.Button(functionsFrame, text="Nozzle Iterator & Impulse Calculator")
+  seriesBtn = ttk.Button(functionsFrame, text="Flight Simulation w/ Thust Curve", 
+                         command=lambda: ThrustCurveFlightSim(gui, configs))
   seriesBtn.grid(row=4,column=0, sticky="nsew")
 
   # Configurations 
@@ -237,9 +239,6 @@ def NozzleIteratorGUI(gui):
   def runNozzleIterator():
       # Remove placeholder
       placeholder_canvas.itemconfig(text_id, text='Running...')
-      
-      runningLabel = tk.Label(graphsFrame, text="Running...")
-      runningLabel.grid(row=0,column=0,sticky='ew', columnspan=2)
       popup.update()
 
       NIconfig = copy.deepcopy(configs)
@@ -467,16 +466,16 @@ def createImpulseCalculator(popup):
   labelName = "Impulse Calculator Config"
 
   fields = [
-            "Surface Pressure - Pa", "Surface Temperature - K", "Ground Wind Velocity (- if launching into wind) - m/s", "Rail Angle (+ into wind) - radians", "Launch Site Elevation - m",
+            "Surface Pressure - Pa", "Surface Temperature - K", "Wind Velocity (- for into wind) - m/s", "Rail Angle (+ into wind) - radians", "Launch Site Elevation - m",
             "Cross-Section Area - m^2", "Drag Coefficient", "NO Motor Mass - kg", "Specific Impulse - (N * s)/kg", "Desired Apogee - m", "Apogee Range (0.01 = within 1%)", 
-            "Burn Time Range (0.5 = shows all within 50% of mean)", "Burn Time Step (burn time jump size) - s", "Minimum Average Thrust to Weight", "Idk bro just put 0.0001", "Flight Simulation mininum time step - s"
+            "Burn Time Range %diff shown", "Burn Time Step - s", "Min Avg Thrust to Weight", "Bisection bound %diff", "Flight Sim min time step - s"
   ]  
 
   if "ImpulseCalculator" in configs and configs["ImpulseCalculator"] is not None:
     defaults = {
         "Surface Pressure - Pa": configs["ImpulseCalculator"].get("surfacePressure", ""),
         "Surface Temperature - K": configs["ImpulseCalculator"].get("surfaceTemperature", ""),
-        "Ground Wind Velocity (- if launching into wind) - m/s": configs["ImpulseCalculator"].get("windVelocity", ""),
+        "Wind Velocity (- for into wind) - m/s": configs["ImpulseCalculator"].get("windVelocity", ""),
         "Rail Angle (+ into wind) - radians": configs["ImpulseCalculator"].get("railAngle", ""),
         "Launch Site Elevation - m": configs["ImpulseCalculator"].get("launchSiteElevation", ""),
         "Cross-Section Area - m^2": configs["ImpulseCalculator"].get("dragArea", ""),
@@ -485,11 +484,11 @@ def createImpulseCalculator(popup):
         "Specific Impulse - (N * s)/kg": configs["ImpulseCalculator"].get("specificImpulse", ""),
         "Desired Apogee - m": configs["ImpulseCalculator"].get("desiredApogee", ""),
         "Apogee Range (0.01 = within 1%)": configs["ImpulseCalculator"].get("apogeeThreshold", ""),
-        "Burn Time Range (0.5 = shows all within 50% of mean)": configs["ImpulseCalculator"].get("burnTimeRange", ""),
-        "Burn Time Step (burn time jump size) - s": configs["ImpulseCalculator"].get("burnTimeStep", ""),
-        "Minimum Average Thrust to Weight": configs["ImpulseCalculator"].get("minAvgTtW", ""),
-        "Idk bro just put 0.0001": configs["ImpulseCalculator"].get("bisectionBoundPercDiff", ""),
-        "Flight Simulation mininum time step - s": configs["ImpulseCalculator"].get("deltaT", ""),
+        "Burn Time Range %diff shown": configs["ImpulseCalculator"].get("burnTimeRange", ""),
+        "Burn Time Step - s": configs["ImpulseCalculator"].get("burnTimeStep", ""),
+        "Min Avg Thrust to Weight": configs["ImpulseCalculator"].get("minAvgTtW", ""),
+        "Bisection bound %diff": configs["ImpulseCalculator"].get("bisectionBoundPercDiff", ""),
+        "Flight Sim min time step - s": configs["ImpulseCalculator"].get("deltaT", ""),
     }
   else:
     defaults = None
