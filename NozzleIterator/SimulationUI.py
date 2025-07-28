@@ -1,7 +1,6 @@
 # SIMULATION UI
 #
 # This class is used to save simulation results and present the Data clealy. 
-
 import csv 
 
 # math handling modules
@@ -35,7 +34,6 @@ class SimulationUI:
         'pressure': 'Pa',
         'force': 'N',
         'time': 's',
-        'kn': 'unitless'
     }
 
     # Pressure on left Y-axis
@@ -47,7 +45,7 @@ class SimulationUI:
     # Thrust and Kn on right Y-axis
     ax2 = ax1.twinx()
     ax2.plot(time, thrust, 'r--', label='Thrust (' + units['force'] + ')')
-    ax2.plot(time, kn, 'g-.', label='Kn (' + units['kn'] + ')')  # Share Y-axis
+    ax2.plot(time, kn, 'g-.', label='Kn')  # Share Y-axis
     ax2.set_ylabel('Thrust / Kn', color='r')
     ax2.tick_params(axis='y', labelcolor='r')
 
