@@ -216,16 +216,25 @@ class ThrustCurveFlightSimApp:
         config_scrollbar = ttk.Scrollbar(self.config_readout_frame, orient="vertical", command=config_canvas.yview)
         config_scrollbar.pack(side="right", fill="y")
         config_canvas.configure(yscrollcommand=config_scrollbar.set)
-        # Bind the canvas to update its scrollregion when its size changes
-        config_canvas.bind('<Configure>', lambda e: config_canvas.configure(scrollregion = config_canvas.bbox("all")))
-
+        
         self.config_inner_frame = tk.Frame(config_canvas)
-        config_canvas.create_window((0, 0), window=self.config_inner_frame, anchor="nw", width=config_canvas.winfo_width())
+        # Create the window AFTER the canvas is packed, and bind its width to the canvas's width
+        # The key is to update the 'width' of the window created in the canvas when the canvas itself resizes.
+        config_canvas_window_id = config_canvas.create_window((0, 0), window=self.config_inner_frame, anchor="nw") # Removed initial width=
+        
         # Bind the inner frame to update the canvas scrollregion when its size changes (due to packing labels)
         self.config_inner_frame.bind("<Configure>", lambda e: config_canvas.configure(scrollregion = config_canvas.bbox("all")))
+        
+        # This crucial binding ensures the inner frame's width matches the canvas's width
+        # This lambda ensures the width of the window within the canvas is always the width of the canvas.
+        config_canvas.bind('<Configure>', lambda e: config_canvas.itemconfigure(config_canvas_window_id, width=e.width))
+        
         self.config_inner_frame.columnconfigure(0, weight=1)
 
-
+        # Now, the loop to create and pack the labels into the self.config_inner_frame
+        # This part was mostly correct, but relied on the inner frame having the correct width.
+        # It's also good practice to ensure _initialize_config_readouts is called at the very end of __init__
+        # or just before _setup_ui() is called, which it already is.
         for key, var in self.config_readout_vars.items():
             # Find the actual label text from the config_info_map for display
             display_label_text = key # Default to key if not found
@@ -233,7 +242,7 @@ class ThrustCurveFlightSimApp:
                 if path_str == key:
                     display_label_text = label_text_full
                     break
-            tk.Label(self.config_inner_frame, textvariable=var, wraplength=280, justify='left').pack(anchor='w', padx=5, pady=1)
+            tk.Label(self.config_inner_frame, textvariable=var, wraplength=280, justify='left').pack(anchor='w', padx=5, pady=1, fill='x') # Added fill='x' for better expansion
 
 
         # Simulation Summary Display Area
@@ -260,8 +269,11 @@ class ThrustCurveFlightSimApp:
         self.plot_select_frame = tk.LabelFrame(self.right_panel_frame, text="Select Plot Type", borderwidth=1, relief="groove")
         self.plot_select_frame.grid(row=0, column=0, sticky='ew', padx=5, pady=5)
         self.plot_select_frame.columnconfigure(0, weight=1)
+        
+        initial_plot_options = ["Run Simulation First", "All Plots"] # Include "All Plots" here
+
         self.plot_type_dropdown = ttk.OptionMenu(self.plot_select_frame, self.selected_plot_type_dropdown_var,
-                                                 self.selected_plot_type_dropdown_var.get(), *["Run Simulation First"])
+                                                 self.selected_plot_type_dropdown_var.get(), *initial_plot_options)
         self.plot_type_dropdown.config(width=50)
         self.plot_type_dropdown.pack(pady=5)
         self.selected_plot_type_dropdown_var.trace_add("write", self._display_selected_plot)
@@ -493,38 +505,47 @@ class ThrustCurveFlightSimApp:
 
 
     def _populate_plot_type_dropdown(self, clear_only=False):
-        """
-        Populates the plot type dropdown with available options.
-        Called when a flight is selected or when clearing.
-        """
-        menu = self.plot_type_dropdown["menu"]
-        menu.delete(0, "end") # Clear existing options
+            """
+            Populates the plot type dropdown with available options.
+            Called when a flight is selected or when clearing.
+            """
+            menu = self.plot_type_dropdown["menu"]
+            menu.delete(0, "end") # Clear existing options
 
-        if clear_only or self.flight_data_array is None or len(self.flight_data_array) == 0:
-            self.selected_plot_type_dropdown_var.set("Run Simulation First")
-            menu.add_command(label="Run Simulation First", command=tk._setit(self.selected_plot_type_dropdown_var, "Run Simulation First"))
-            self.plot_type_dropdown.config(state='disabled')
-            self.open_new_window_btn.config(state='disabled')
-            self.plot_display_label.config(image='', text="Plot will appear here.") # Clear plot area
-            self.current_plot_photo = None
-            return
+            plot_type_options = []
+            if clear_only or self.flight_data_array is None or len(self.flight_data_array) == 0:
+                plot_type_options.append("Run Simulation First")
+                self.plot_type_dropdown.config(state='disabled')
+                self.open_new_window_btn.config(state='disabled')
+                self.plot_display_label.config(image='', text="Plot will appear here.") # Clear plot area
+                self.current_plot_photo = None
+            else:
+                plot_type_options.append("All Plots")
+                # Ensure the plotter instance has its types available
+                if hasattr(self.plotter, 'available_plot_types') and self.plotter.available_plot_types:
+                    plot_type_options.extend(sorted([p.replace('_', ' ').title() for p in self.plotter.available_plot_types]))
+                
+                self.plot_type_dropdown.config(state='normal')
+                self.open_new_window_btn.config(state='normal')
 
-        plot_type_options = ["All Plots"] + sorted(self.plotter.available_plot_types)
-        for opt in plot_type_options:
-            readable_label = opt.replace('_', ' ').title() # Convert "position_time" to "Position Time"
-            menu.add_command(label=readable_label, command=tk._setit(self.selected_plot_type_dropdown_var, readable_label))
 
-        # Set default selection
-        if "All Plots" in plot_type_options:
-            self.selected_plot_type_dropdown_var.set("All Plots")
-        elif plot_type_options:
-            self.selected_plot_type_dropdown_var.set(plot_type_options[0].replace('_', ' ').title())
-        else: # Should not happen if plotter.available_plot_types is always populated
-            self.selected_plot_type_dropdown_var.set("No Plots Available")
+            # Now, repopulate the menu and set the variable
+            for opt in plot_type_options:
+                # When adding commands, the command needs to set the variable directly
+                menu.add_command(label=opt, command=tk._setit(self.selected_plot_type_dropdown_var, opt))
 
-        self.plot_type_dropdown.config(state='normal')
-        self.open_new_window_btn.config(state='normal')
-        self._display_selected_plot() # Automatically display the default plot for the simulated flight
+            # Set default selection after the menu has been repopulated with all options
+            if "All Plots" in plot_type_options and not clear_only:
+                self.selected_plot_type_dropdown_var.set("All Plots")
+            elif plot_type_options:
+                self.selected_plot_type_dropdown_var.set(plot_type_options[0])
+            else:
+                self.selected_plot_type_dropdown_var.set("No Plots Available")
+                
+            # Manually trigger the display of the selected plot.
+            # This trace should already handle it, but calling explicitly ensures it.
+            if not clear_only:
+                self._display_selected_plot()
 
     def _display_selected_plot(self, *args):
         """
@@ -707,4 +728,3 @@ class ThrustCurveFlightSimApp:
 
         # Destroy the main Thrust Curve Flight Simulation popup window
         self.popup.destroy()
-
