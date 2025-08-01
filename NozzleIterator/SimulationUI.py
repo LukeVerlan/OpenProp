@@ -1,7 +1,6 @@
 # SIMULATION UI
 #
 # This class is used to save simulation results and present the Data clealy. 
-
 import csv 
 
 # math handling modules
@@ -23,31 +22,40 @@ class SimulationUI:
     self.nozzle = nozzle
     self.NIconfig = NIconfig
 
-  # Brief - creates a plot of the thrust curve for the given simulation
   def plotSim(self):
     time = self.simResult.channels['time'].getData()
     thrust = self.simResult.channels['force'].getData()
     pressure = self.simResult.channels['pressure'].getData()
+    kn = self.simResult.channels['kn'].getData()
 
     fig, ax1 = plt.subplots()
 
-    units = {}
-    units['pressure'] = 'Pa'
-    units['force'] = 'N'
-    units['time'] = 's'
+    units = {
+        'pressure': 'Pa',
+        'force': 'N',
+        'time': 's',
+        'kn': 'unitless'
+    }
 
-    ax1.plot(time, pressure, 'b-', label='Pressure ' + '(' + units['pressure'] + ')')
-    ax1.set_xlabel('Time ' + '(' + units['time'] + ')')
-    ax1.set_ylabel('Pressure ' + '(' + units['pressure'] + ')', color='b')
+    # Pressure on left Y-axis
+    ax1.plot(time, pressure, 'b-', label='Pressure (' + units['pressure'] + ')')
+    ax1.set_xlabel('Time (' + units['time'] + ')')
+    ax1.set_ylabel('Pressure (' + units['pressure'] + ')', color='b')
     ax1.tick_params(axis='y', labelcolor='b')
 
-    # Create a second Y-axis that shares the same X-axis
+    # Thrust and Kn on right Y-axis
     ax2 = ax1.twinx()
-    ax2.plot(time, thrust, 'r--', label='Thrust ' + '(' + units['force']+ ')')
-    ax2.set_ylabel('Thrust ' + '(' + units['force']+ ')', color='r')
+    ax2.plot(time, thrust, 'r--', label='Thrust (' + units['force'] + ')')
+    ax2.plot(time, kn, 'g-.', label='Kn (' + units['kn'] + ')')  # Share Y-axis
+    ax2.set_ylabel('Thrust / Kn', color='r')
     ax2.tick_params(axis='y', labelcolor='r')
 
-    plt.title('Motor Simluation Results with Optimal nozzle')
+    # Combine legends
+    lines1, labels1 = ax1.get_legend_handles_labels()
+    lines2, labels2 = ax2.get_legend_handles_labels()
+    ax1.legend(lines1 + lines2, labels1 + labels2, loc='upper left')
+
+    plt.title('Motor Simulation Results with Optimal Nozzle')
 
     return self._plotToImage(fig)
 

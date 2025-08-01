@@ -3,14 +3,14 @@ import numpy as np
 
 class SimulationTools:
 
-    def __init__(self, constants, parameters, elevationProperties_arg):
+    def __init__(self, constants, importedDict, elevationProperties_arg):
         self.elevationProperties = elevationProperties_arg
         self.constants = constants
-        self.parameters = parameters
+        self.configDict = importedDict
 
 
     def getWetMass(self, avgThrust, burnTime):
-        wetMass = self.parameters["noMotorMass"] + (1.6 * ((avgThrust * burnTime) / self.parameters["specificImpulse"]) + .354)  # found a regression relationship between prop mass and motor mass
+        wetMass = self.configDict["noMotorMass"] + (1.6 * ((avgThrust * burnTime) / self.configDict["specificImpulse"]) + .354)  # found a regression relationship between prop mass and motor mass
         return wetMass
 
     def runsimulation(self, deltaT, burnTime, avgThrust, saveData):
@@ -23,8 +23,8 @@ class SimulationTools:
         xVelocity = 0.0
         yVelocity = 0.0
         time = 0.0
-        propelantMass = (avgThrust * burnTime) / self.parameters["specificImpulse"]
-        dryMass = self.parameters["noMotorMass"] + (1.6 * propelantMass + .354) - propelantMass
+        propelantMass = (avgThrust * burnTime) / self.configDict["specificImpulse"]
+        dryMass = self.configDict["noMotorMass"] + (1.6 * propelantMass + .354) - propelantMass
 
         # Helper functions for propellant mass and thrust within the runsimulation scope
         def calculate_propellant_mass(current_time):
@@ -48,21 +48,21 @@ class SimulationTools:
             current_propellant_mass = calculate_propellant_mass(current_t)
             current_mass = dryMass + current_propellant_mass
 
-            current_air_density = self.elevationProperties.calculate_air_density(y, self.parameters.surfacePressure, self.parameters.surfaceTemperature, self.parameters.launchSiteElevation)
+            current_air_density = self.elevationProperties.calculate_air_density(y, self.configDict["surfacePressure"], self.configDict["surfaceTemperature"], self.configDict["launchSiteElevation"])
 
-            current_weight_force = self.elevationProperties.calculate_gravity_at_elevation(y, self.parameters.launchSiteElevation) * current_mass
+            current_weight_force = self.elevationProperties.calculate_gravity_at_elevation(y, self.configDict["launchSiteElevation"]) * current_mass
             current_thrust = calculate_thrust(current_t)
 
-            x_thrust = math.sin(self.parameters["railAngle"]) * current_thrust
-            y_thrust = math.cos(self.parameters["railAngle"]) * current_thrust
+            x_thrust = math.sin(self.configDict["railAngle"]) * current_thrust
+            y_thrust = math.cos(self.configDict["railAngle"]) * current_thrust
 
             # Calculate drag forces
-            rel_velocity_x = vx - self.parameters["windVelocity"]
+            rel_velocity_x = vx - self.configDict["windVelocity"]
             rel_velocity_y = vy
             velocity_magnitude = math.sqrt(rel_velocity_x**2 + rel_velocity_y**2)
 
             phi = math.atan2(rel_velocity_x, rel_velocity_y) # Angle of the relative velocity vector
-            drag_force = 0.5 * current_air_density * (velocity_magnitude)**2 * self.parameters["dragCoefficient"] * self.parameters["dragArea"]
+            drag_force = 0.5 * current_air_density * (velocity_magnitude)**2 * self.configDict["dragCoefficient"] * self.configDict["dragArea"]
             x_drag = drag_force * math.sin(phi)
             y_drag = drag_force * math.cos(phi)
             #print("ydrag: " +str(y_drag) +  "ythrust: " + str(y_thrust))

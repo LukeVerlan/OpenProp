@@ -40,21 +40,22 @@ def commitConfig(configs, frame, type):
 # @param configs The dictionary containing the current configurations.
 # @param config The configuration dictionary loaded from the file.
 # @param type The type of configuration being uploaded (e.g., 'All', 'Grains', 'Motor', 'Nozzle', 'Propellant').
-def addToConfigs(configs, config, type):
+def addToConfigs(localConfig, externalConfig, type):
 
   if type == 'All':
-    configs["Grains"] = config["Grains"]
-    configs["Motor"] = config["Motor"]
-    configs["Nozzle"] = config["Nozzle"]
-    configs["Propellant"] = config["Propellant"]
+    localConfig["Grains"] = externalConfig["Grains"]
+    localConfig["Motor"] = externalConfig["Motor"]
+    localConfig["Nozzle"] = externalConfig["Nozzle"]
+    localConfig["Propellant"] = externalConfig["Propellant"]
+    localConfig["ImpulseCalculator"] = externalConfig[""]
   elif type == 'Grains':
-    configs['Grains'] = config["Grains"]
+    localConfig['Grains'] = externalConfig["Grains"]
   elif type == 'Motor':
-    configs['Motor'] = config['Motor']
+    localConfig['Motor'] = externalConfig['Motor']
   elif type == 'Nozzle':
-    configs['Nozzle'] = config['Nozzle']
+    localConfig['Nozzle'] = externalConfig['Nozzle']
   elif type == 'Propellant':
-    configs['Propellant'] = config['Propellant']
+    localConfig['Propellant'] = externalConfig['Propellant']
 
 # @brief Checks if the configuration dictionary has the required keys for the specified type.
 # @param config The configuration dictionary to check.
@@ -62,6 +63,8 @@ def addToConfigs(configs, config, type):
 # @return True if the configuration dictionary has the required keys, False otherwise.
 def hasConfigs(config, type):
     if type == 'All':
+        required_keys = ["Propellant", "Grains", "Motor", "Nozzle, ImpulseCalculator"]
+    elif type == 'NozzleIterator':
         required_keys = ["Propellant", "Grains", "Motor", "Nozzle"]
     elif type == 'Grains':
         required_keys = ["Grains"]
@@ -71,6 +74,9 @@ def hasConfigs(config, type):
         required_keys = ['Nozzle']
     elif type == 'Motor':
         required_keys = ['Motor']
+    elif type == 'ImpulseCalculator':
+        required_keys = ['ImpulseCalculator']
+        
         
     return all(key in config for key in required_keys)
 

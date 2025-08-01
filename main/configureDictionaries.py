@@ -1,4 +1,3 @@
-import re
 
 # @breif Configures the propellant dictionary with the given entry values.
 # @param configs The dictionary containing the current configurations.
@@ -82,6 +81,25 @@ def configureGrainDict(configs, entryVals, type):
    configs["Grains"][-1]['finLength'] = float(entryVals["Fin Length - m"])
    configs["Grains"][-1]['finWidth'] = float(entryVals["Fin Width - m"])
 
+def configureImpulseCalcDict(configs, entryVals):
+    configs["ImpulseCalculator"] = {}
+    configs["ImpulseCalculator"]["surfacePressure"] = float(entryVals["Surface Pressure - Pa"])
+    configs["ImpulseCalculator"]["surfaceTemperature"] = float(entryVals["Surface Temperature - K"])
+    configs["ImpulseCalculator"]["windVelocity"] = float(entryVals["Wind Velocity (- for into wind) - m/s"])
+    configs["ImpulseCalculator"]["railAngle"] = float(entryVals["Rail Angle (+ into wind) - radians"])
+    configs["ImpulseCalculator"]["launchSiteElevation"] = float(entryVals["Launch Site Elevation - m"])
+    configs["ImpulseCalculator"]["dragArea"] = float(entryVals["Cross-Section Area - m^2"])
+    configs["ImpulseCalculator"]["dragCoefficient"] = float(entryVals["Drag Coefficient"])
+    configs["ImpulseCalculator"]["noMotorMass"] = float(entryVals["NO Motor Mass - kg"])
+    configs["ImpulseCalculator"]["specificImpulse"] = float(entryVals["Specific Impulse - (N * s)/kg"])
+    configs["ImpulseCalculator"]["desiredApogee"] = float(entryVals["Desired Apogee - m"])
+    configs["ImpulseCalculator"]["apogeeThreshold"] = float(entryVals["Apogee Range (0.01 = within 1%)"])
+    configs["ImpulseCalculator"]["burnTimeRange"] = float(entryVals["Burn Time Range %diff shown"])
+    configs["ImpulseCalculator"]["burnTimeStep"] = float(entryVals["Burn Time Step - s"])
+    configs["ImpulseCalculator"]["minAvgTtW"] = float(entryVals["Min Avg Thrust to Weight"])
+    configs["ImpulseCalculator"]["bisectionBoundPercDiff"] = float(entryVals["Bisection bound %diff"])
+    configs["ImpulseCalculator"]["deltaT"] = float(entryVals["Flight Sim min time step - s"])
+
 # @brief Verifies that all entry boxes are of the correct values
 # @param entryvals - entry boxes
 # @return true if valid false if invald 
@@ -110,7 +128,3 @@ def verifyEntryBoxes(entryvals):
       return False
 
   return True
-
-
-   
-
