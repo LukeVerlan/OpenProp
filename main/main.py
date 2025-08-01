@@ -612,10 +612,10 @@ def addGrainWindow(frame, type, refreshCall):
 
   entries = guiFunction.createLabledEntryBoxes(frame, fields, dropDown)
 
-  saveButton = tk.Button(frame, text="Save Config", command=lambda: (guiFunction.saveEntries(configs,entries,"Grain", type), refreshCall()),
+  saveButton = tk.Button(frame, text="Save Config", command=lambda: (guiFunction.saveEntries(configs, entries, "Grain", type, frame), refreshCall()),
                         borderwidth=1, relief="solid")
   
-  saveButton.grid(row=8,column=5, padx=4, pady=4, sticky = 'se')
+  saveButton.grid(row=9,column=5, padx=4, pady=4, sticky = 'se')
 
 # @Brief Displays the grains in the grain geometry configuration GUI
 # @param functionFrame - The frame where the grains will be displayed

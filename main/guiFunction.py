@@ -133,9 +133,14 @@ def createLabledEntryBoxes(parent, fields, dropDown=None, defaults=None):
 # @param type The type of configuration being saved (e.g., 'Grains', 'Motor', 'Nozzle', 'Propellant').
 def saveEntries(configs, entries, configName, type, frame):
     
+    print(entries)
+    # print(configs)
+    
     entryVals = {}
     for field in entries.keys():
       entryVals[field] = entries[field].get()
+
+    print(entryVals)
 
     if configureDictionaries.verifyEntryBoxes(entryVals):
       if configName == "Propellant Config":
@@ -150,5 +155,6 @@ def saveEntries(configs, entries, configName, type, frame):
       successLabel = tk.Label(frame, text ='Save Successful')
       successLabel.grid(row = 10, column=5, sticky= 'se')
     else:
+      
       failureLabel = tk.Label(frame, text ='Invalid Entries ')
       failureLabel.grid(row = 10, column=5, sticky= 'se')
