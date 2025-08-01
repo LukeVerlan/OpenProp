@@ -109,6 +109,8 @@ def verifyEntryBoxes(entryvals):
     "Propellant Name",
     "Search Preference",
     'type',
+    'Inhibited Ends',
+    'Inverted Fins'
   }
 
   def is_number(s):

@@ -152,6 +152,6 @@ def saveEntries(configs, entries, configName, type, frame):
       successLabel = tk.Label(frame, text ='Save Successful')
       successLabel.grid(row = 10, column=5, sticky= 'se')
     else:
+
       failureLabel = tk.Label(frame, text ='Invalid Entries ')
       failureLabel.grid(row = 10, column=5, sticky= 'se')
-
