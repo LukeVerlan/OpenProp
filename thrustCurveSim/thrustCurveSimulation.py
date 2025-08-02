@@ -126,19 +126,19 @@ class ThrustCurveSimulator:
             
             # --- FOCUSED DEBUGGING PRINTS (only for t=0.0 or near burnout) ---
             # Print for a window of 0.5 seconds before and after burnout
-            if current_t == 0.0 or (current_t > burnTime - 0.5 and current_t < burnTime + 0.5): 
-                print(f"\n--- Forces & Accel (t={current_t:.4f}s) ---")
-                print(f"  Current Mass: {current_mass:.4f} kg")
-                print(f"  Weight Force: {current_weight_force:.2f} N")
-                print(f"  Interpolated Thrust (Total): {current_thrust:.2f} N")
-                print(f"  Y-Thrust Component: {y_thrust:.2f} N (railAngle={self.configDict['ImpulseCalculator']['railAngle']:.3f} rad)")
-                print(f"  Y-Drag Component: {y_drag:.2f} N (Vmag={velocity_magnitude:.2f}, AirDen={current_air_density:.4f})")
-                print(f"  Net Force Y: {net_force_y:.2f} N")
-                print(f"  Acceleration Y (ay): {ay:.2f} m/s^2")
-                print(f"  Net Force X: {net_force_x:.2f} N")
-                print(f"  Acceleration X (ax): {ax:.2f} m/s^2")
-                print(f"  Total Acceleration Magnitude: {math.sqrt(ax**2 + ay**2):.2f} m/s^2") # Direct calculation here
-                print(f"--------------------------------------------------\n")
+            # if current_t == 0.0 or (current_t > burnTime - 0.5 and current_t < burnTime + 0.5): 
+            #     print(f"\n--- Forces & Accel (t={current_t:.4f}s) ---")
+            #     print(f"  Current Mass: {current_mass:.4f} kg")
+            #     print(f"  Weight Force: {current_weight_force:.2f} N")
+            #     print(f"  Interpolated Thrust (Total): {current_thrust:.2f} N")
+            #     print(f"  Y-Thrust Component: {y_thrust:.2f} N (railAngle={self.configDict['ImpulseCalculator']['railAngle']:.3f} rad)")
+            #     print(f"  Y-Drag Component: {y_drag:.2f} N (Vmag={velocity_magnitude:.2f}, AirDen={current_air_density:.4f})")
+            #     print(f"  Net Force Y: {net_force_y:.2f} N")
+            #     print(f"  Acceleration Y (ay): {ay:.2f} m/s^2")
+            #     print(f"  Net Force X: {net_force_x:.2f} N")
+            #     print(f"  Acceleration X (ax): {ax:.2f} m/s^2")
+            #     print(f"  Total Acceleration Magnitude: {math.sqrt(ax**2 + ay**2):.2f} m/s^2") # Direct calculation here
+            #     print(f"--------------------------------------------------\n")
 
 
             return [vx, vy, ax, ay], x_thrust, y_thrust, x_drag, y_drag, ax, ay
@@ -161,8 +161,17 @@ class ThrustCurveSimulator:
         while (not apogeeReached or not takeOff) and time < 1000 :
             iteration_count += 1
             #if iteration_count % 1 == 0:
-                #print(f"Simulating... Time: {time:.2f}s, Altitude: {yPosition:.2f}m, Velocity: {yVelocity:.2f}m/s")
+                #print(f"Simulating... Time: {time:.2f}s, Altitude: {yPosition:.2f}m, Velocity: {yVelocity:.2f}m/s")    
+
+            if yPosition > max_y_position:
+                max_y_position = yPosition
+
+            current_state = [xPosition, yPosition, xVelocity, yVelocity]
+
             
+            derivs_k1, x_thrust_k1, y_thrust_k1, x_drag_k1, y_drag_k1, ax_k1, ay_k1 = \
+                get_derivatives(time, current_state)
+
             if takeOff and yVelocity <=0:
                 apogeeReached = True
                 #print("apogee reached")
@@ -173,29 +182,22 @@ class ThrustCurveSimulator:
                     xPosition = 0
                     xVelocity = 0
                     yVelocity = 0
-                    #print("not takeoff yet, set pos and vel to zero")
+                    ax_k1 = 0
+                    ay_k1 = 0
                 takeOff = True
-                #print("takeoff set tot true")
+                #print("takeoff set to true")
 
             if yPosition < 0:
                 yPosition = 0
                 xPosition = 0
                 xVelocity = 0
                 yVelocity = 0
-                
-            # else:
-            #     yVelocity = 0
-            #     xVelocity = 0
-            #     xPosition = 0
-            #     yPosition = 0 
-
-            if yPosition > max_y_position:
-                max_y_position = yPosition
-
-            current_state = [xPosition, yPosition, xVelocity, yVelocity]
-
-            derivs_k1, x_thrust_k1, y_thrust_k1, x_drag_k1, y_drag_k1, ax_k1, ay_k1 = \
-                get_derivatives(time, current_state)
+                ax_k1 = 0
+                ay_k1 = 0
+            
+            if iteration_count == 1:
+                ax_k1 = 0
+                ay_k1 = 0
 
             if saveData:
                 flight_data_list.append([
@@ -211,6 +213,7 @@ class ThrustCurveSimulator:
                     ax_k1,
                     ay_k1
                 ])
+                print("saved data")
 
             current_velocity_magnitude = math.sqrt(xVelocity**2 + yVelocity**2)
             if current_velocity_magnitude > max_velocity:
@@ -251,7 +254,7 @@ class ThrustCurveSimulator:
             # We already calculated current_total_acceleration_magnitude.
             # Let's calculate total_thrust_magnitude_k1 for the print.
             total_thrust_magnitude_k1 = math.sqrt(x_thrust_k1**2 + y_thrust_k1**2)
-            if iteration_count % 10 == 0:
+            if iteration_count % 1 == 0:
                 print(f"Iteration {iteration_count}: Time={time:.2f}s, Alt={yPosition:.2f}m, V_y={yVelocity:.2f}m/s, Ay={ay_k1:.2f}m/s^2, Thrust={total_thrust_magnitude_k1:.2f}N, Total Accel Mag={current_total_acceleration_magnitude:.2f}m/s^2, CumImp={cumulative_impulse:.2f}Ns")
                 print(f"  Flags: apogeeReached={apogeeReached}, takeOff={takeOff}")
 
@@ -268,8 +271,5 @@ class ThrustCurveSimulator:
             "max_acceleration": max_acceleration
         }
         print(f"--- Simulation Finished ---")
-        print(f"Final Sim Stats: {sim_stats_dict}")
-        print(f"Total data points collected: {simFlightData.shape[0] if simFlightData.size > 0 else 0}")
-        print(f"--- End of ThrustCurveSimulator.runsimulation ---\n")
 
         return sim_stats_dict, simFlightData

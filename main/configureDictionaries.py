@@ -110,7 +110,8 @@ def verifyEntryBoxes(entryvals):
     "Search Preference",
     'type',
     'Inhibited Ends',
-    'Inverted Fins'
+    'Inverted Fins',
+    'Parallel Simulation (Harder on computer)'
   }
 
   def is_number(s):

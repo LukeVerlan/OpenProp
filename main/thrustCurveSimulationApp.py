@@ -45,6 +45,17 @@ class ThrustCurveFlightSimApp:
         self.plotter = plotter_instance
         self.configs = initial_configs
 
+        self.plotter.available_plot_types = [
+            'position_time',
+            'trajectory',
+            'velocity_time',
+            'total_speed_time',
+            'thrust_components_time',
+            'drag_components_time',
+            'acceleration_components_time',
+            'total_acceleration_magnitude_time'
+        ]
+
         # --- Data Storage for Simulation Results (Instance Variables) ---
         self.sim_stats = None
         self.flight_data_array = None
@@ -317,6 +328,11 @@ class ThrustCurveFlightSimApp:
         self.plot_type_dropdown = ttk.OptionMenu(self.plot_select_frame, self.selected_plot_type_dropdown_var, "Run Simulation First", "Run Simulation First")
         self.plot_type_dropdown.config(width=50, state='disabled')
         self.plot_type_dropdown.pack(pady=5)
+
+        self.selected_plot_type_dropdown_var.trace_add("write", self._display_selected_plot)
+
+
+        
         
         self.open_new_window_btn = tk.Button(self.right_panel_frame, text="Open Plot in New Window",
                                              command=self._open_plot_in_new_window,
@@ -497,6 +513,11 @@ class ThrustCurveFlightSimApp:
         self.popup.update_idletasks()
 
         try:
+
+            self.plotter.clear_all_plots()
+            self._clear_plot_display()
+            self.popup.update_idletasks() # Ensure the GUI update happens immediately
+
             temp_configs_for_sim = copy.deepcopy(self.configs) 
 
             if "Nozzle" not in temp_configs_for_sim:
@@ -522,7 +543,6 @@ class ThrustCurveFlightSimApp:
                     temp_configs_for_sim["Nozzle"][nozzle_key_mapping[file_key]] = file_value
                 # else: # Option to add unmapped keys directly if simulator expects them
                 #     temp_configs_for_sim["Nozzle"][file_key] = file_value
-
 
             sim_stats, flight_data_array = self._run_simulation_core(temp_configs_for_sim, thrust_curve_filepath)
 
@@ -568,50 +588,33 @@ class ThrustCurveFlightSimApp:
             return
 
         self._populate_plot_type_dropdown()
-
-
-    def _populate_plot_type_dropdown(self, clear_only=False):
-        if hasattr(self, 'plot_type_dropdown') and self.plot_type_dropdown.winfo_exists():
-            self.plot_type_dropdown.destroy()
-
-        plot_type_options = []
-        if clear_only or self.flight_data_array is None or len(self.flight_data_array) == 0:
-            plot_type_options.append("Run Simulation First")
-            initial_selection = "Run Simulation First"
-            dropdown_state = 'disabled'
-            btn_state = 'disabled'
-            plot_label_text = "Plot will appear here."
-            plot_label_image = ''
-            self.current_plot_photo = None
-        else:
-            plot_type_options.append("All Plots")
-            if hasattr(self.plotter, 'available_plot_types') and self.plotter.available_plot_types:
-                plot_type_options.extend(sorted([p.replace('_', ' ').title() for p in self.plotter.available_plot_types]))
             
-            initial_selection = "All Plots"
-            dropdown_state = 'normal'
-            btn_state = 'normal'
-            plot_label_text = ""
-            plot_label_image = None
+    def _populate_plot_type_dropdown(self, clear_only=False):
+        """
+        Populates the plot type dropdown with available options.
+        Called when a flight is selected or when clearing.
+        """
+        menu = self.plot_type_dropdown["menu"]
+        menu.delete(0, "end") # Clear existing options
 
-        self.selected_plot_type_dropdown_var.set(initial_selection)
 
-        self.plot_type_dropdown = ttk.OptionMenu(
-            self.plot_select_frame, 
-            self.selected_plot_type_dropdown_var, 
-            initial_selection,
-            *plot_type_options
-        )
-        self.plot_type_dropdown.config(width=50, state=dropdown_state)
-        self.plot_type_dropdown.pack(pady=5)
+        plot_type_options = ["All Plots"] + sorted(self.plotter.available_plot_types)
+        for opt in plot_type_options:
+            readable_label = opt.replace('_', ' ').title() # Convert "position_time" to "Position Time"
+            menu.add_command(label=readable_label, command=tk._setit(self.selected_plot_type_dropdown_var, readable_label))
 
-        self.selected_plot_type_dropdown_var.trace_add("write", self._display_selected_plot)
+        # Set default selection
+        if "All Plots" in plot_type_options:
+            self.selected_plot_type_dropdown_var.set("All Plots")
+        elif plot_type_options:
+            self.selected_plot_type_dropdown_var.set(plot_type_options[0].replace('_', ' ').title())
+        else: # Should not happen if plotter.available_plot_types is always populated
+            self.selected_plot_type_dropdown_var.set("No Plots Available")
 
-        self.open_new_window_btn.config(state=btn_state)
-        self.plot_display_label.config(image=plot_label_image, text=plot_label_text)
-
-        if not clear_only:
-            self._display_selected_plot()
+        self.plot_type_dropdown.config(state='normal')
+        self.open_new_window_btn.config(state='normal')
+        self._display_selected_plot() # Automatically display the default plot for the selected flight
+    
 
 
     def _display_selected_plot(self, *args):
@@ -750,3 +753,8 @@ class ThrustCurveFlightSimApp:
         os.makedirs('flight_plots', exist_ok=True)
 
         self.popup.destroy()
+
+    def _clear_plot_display(self):
+        """Clears the plot display label and its PhotoImage reference."""
+        self.plot_display_label.config(image='', text="Plot will appear here.")
+        self.current_plot_photo = None
