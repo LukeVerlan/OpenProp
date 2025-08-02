@@ -132,7 +132,8 @@ def ThrustCurveFlightSimGUI(master_gui, plotter_instance, configs):
 
 def NozzleIteratorGUI(gui):
 
-  OPimDir = "main/OpenPropLogo.png"
+  OPimDir = FileUpload.resource_path("main/OpenPropLogo.png")
+
   OPim = Image.open(OPimDir)
   resizedOPim = OPim.resize((200,625))
   tk_OPim = ImageTk.PhotoImage(resizedOPim)

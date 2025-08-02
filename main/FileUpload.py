@@ -3,6 +3,20 @@ import json
 import tkinter as tk
 import guiFunction
 
+import sys
+import os
+
+def resource_path(relative_path):
+    """ Get absolute path to resource (for pyinstaller compatibility) """
+    try:
+        # PyInstaller uses _MEIPASS
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+
+    return os.path.join(base_path, relative_path)
+
+
 # @brief Uploads a configuration file and updates the configs dictionary.
 # @param popup The popup window where the upload button is located.
 # @param configs The dictionary containing the current configurations.

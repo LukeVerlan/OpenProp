@@ -5,7 +5,7 @@ a = Analysis(
     ['main\\main.py'],
     pathex=[],
     binaries=[],
-    datas=[],
+    datas=[('main/OpenPropLogo.png', 'main')],
     hiddenimports=[],
     hookspath=['hooks'],
     hooksconfig={},
