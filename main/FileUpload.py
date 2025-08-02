@@ -61,7 +61,7 @@ def addToConfigs(localConfig, externalConfig, type):
     localConfig["Motor"] = externalConfig["Motor"]
     localConfig["Nozzle"] = externalConfig["Nozzle"]
     localConfig["Propellant"] = externalConfig["Propellant"]
-    localConfig["ImpulseCalculator"] = externalConfig[""]
+    localConfig["ImpulseCalculator"] = externalConfig["ImpulseCalculator"]
   elif type == 'Grains':
     localConfig['Grains'] = externalConfig["Grains"]
   elif type == 'Motor':
@@ -77,7 +77,7 @@ def addToConfigs(localConfig, externalConfig, type):
 # @return True if the configuration dictionary has the required keys, False otherwise.
 def hasConfigs(config, type):
     if type == 'All':
-        required_keys = ["Propellant", "Grains", "Motor", "Nozzle, ImpulseCalculator"]
+        required_keys = ["Propellant", "Grains", "Motor", "Nozzle", "ImpulseCalculator"]
     elif type == 'NozzleIterator':
         required_keys = ["Propellant", "Grains", "Motor", "Nozzle"]
     elif type == 'Grains':
