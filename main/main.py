@@ -69,7 +69,6 @@ def main():
 
   # with open('./NozzleIterator/config.json', 'r') as file:
   #   configs = json.load(file)
-    
 
   # initialize main GUI page
   gui = tk.Tk()
@@ -88,8 +87,8 @@ def main():
   functionsFrame = ttk.Frame(gui)
   functionsFrame.grid(row=0, column=0,sticky="nsew")
 
-  functionsFrame.rowconfigure([1, 2, 3, 4], weight=1)  # Allow buttons to expand vertically
-  functionsFrame.columnconfigure(0, weight=1)         # Allow buttons to fill horizontally
+  functionsFrame.rowconfigure([1, 2, 3, 4], weight=1)   # Allow buttons to expand vertically
+  functionsFrame.columnconfigure(0, weight=1)           # Allow buttons to fill horizontally
 
   functionsLabel = tk.Label(functionsFrame, text="Functions")
   functionsLabel.grid(row=0, column=0, sticky="nsew")
@@ -102,12 +101,13 @@ def main():
                           command=lambda: ImpulseCalculatorApp(gui, flight_plotter_instance, configs))
   impulseBtn.grid(row=2, column=0, sticky="nsew")
 
-  curativeBtn = ttk.Button(functionsFrame, text="Curative Calculator")
-  curativeBtn.grid(row=3, column=0, sticky="nsew")
+  # curative hidden during dev
+  # curativeBtn = ttk.Button(functionsFrame, text="Curative Calculator")
+  # curativeBtn.grid(row=3, column=0, sticky="nsew")
 
   seriesBtn = ttk.Button(functionsFrame, text="Flight Simulation w/ Thust Curve", 
                          command=lambda: ThrustCurveFlightSimGUI(gui, flight_plotter_instance, configs))
-  seriesBtn.grid(row=4,column=0, sticky="nsew")
+  seriesBtn.grid(row=3,column=0, sticky="nsew")
 
   # Configurations 
   configsFrame = tk.Frame(gui)
@@ -465,7 +465,6 @@ def createNozzleIterator(popup):
 
 # @Brief Saves the current configurations to a JSON file
 # @param popup - The popup window where the configurations are saved
-
 def createImpulseCalculator(popup):
   guiFunction.clearWidgetColumn(popup, 1)
   labelName = "Impulse Calculator Config"
