@@ -365,3 +365,19 @@ class FlightDataPlotter:
             for key, path in self.saved_plot_paths.items():
                 print(f"- {key}: {path}")
             print("-------------------\n")
+    
+    def clear_all_plots(self):
+        """
+        Clears the in-memory cache and deletes all plot files from the output directory.
+        This should be called when new simulation data is available.
+        """
+        self.saved_plot_paths = {}
+        try:
+            if os.path.exists(self.plot_output_dir):
+                for filename in os.listdir(self.plot_output_dir):
+                    filepath = os.path.join(self.plot_output_dir, filename)
+                    if os.path.isfile(filepath) and filepath.endswith('.png'):
+                        os.remove(filepath)
+                print(f"Cleared all plot files from {self.plot_output_dir}")
+        except OSError as e:
+            print(f"Error clearing plot directory {self.plot_output_dir}: {e}")

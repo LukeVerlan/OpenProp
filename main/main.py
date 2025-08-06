@@ -29,9 +29,9 @@ import guiFunction
 # Tool Files
 from NozzleIterator import NozzleIterator
 from impulseCalcGUI import ImpulseCalculatorApp
-#from ThrustCurveFlightSimGUI import ThrustCurveFlightSimApp
 from impulseCalc.graphingTools import FlightDataPlotter
 from impulseCalc import ImpulseCalculator # Module for ImpulseCalculator.main
+from thrustCurveSimulationApp import ThrustCurveFlightSimApp
 
 from CurativeCalculator import CurativeCalculator
 
@@ -67,9 +67,8 @@ def main():
   # FOR UPLOAD DEV WORK COMMENT OUT FOR USER EXPERIENCE
   # ---------------------------------------------------
 
-  with open('./NozzleIterator/config.json', 'r') as file:
-    configs = json.load(file)
-    
+  # with open('./NozzleIterator/config.json', 'r') as file:
+  #   configs = json.load(file)
 
   # initialize main GUI page
   gui = tk.Tk()
@@ -88,8 +87,8 @@ def main():
   functionsFrame = ttk.Frame(gui)
   functionsFrame.grid(row=0, column=0,sticky="nsew")
 
-  functionsFrame.rowconfigure([1, 2, 3, 4], weight=1)  # Allow buttons to expand vertically
-  functionsFrame.columnconfigure(0, weight=1)         # Allow buttons to fill horizontally
+  functionsFrame.rowconfigure([1, 2, 3, 4], weight=1)   # Allow buttons to expand vertically
+  functionsFrame.columnconfigure(0, weight=1)           # Allow buttons to fill horizontally
 
   functionsLabel = tk.Label(functionsFrame, text="Functions")
   functionsLabel.grid(row=0, column=0, sticky="nsew")
@@ -102,12 +101,13 @@ def main():
                           command=lambda: ImpulseCalculatorApp(gui, flight_plotter_instance, configs))
   impulseBtn.grid(row=2, column=0, sticky="nsew")
 
-  curativeBtn = ttk.Button(functionsFrame, text="Curative Calculator")
-  curativeBtn.grid(row=3, column=0, sticky="nsew")
+  # curative hidden during dev
+  # curativeBtn = ttk.Button(functionsFrame, text="Curative Calculator")
+  # curativeBtn.grid(row=3, column=0, sticky="nsew")
 
   seriesBtn = ttk.Button(functionsFrame, text="Flight Simulation w/ Thust Curve", 
-                         command=lambda: ThrustCurveFlightSim(gui, configs))
-  seriesBtn.grid(row=4,column=0, sticky="nsew")
+                         command=lambda: ThrustCurveFlightSimGUI(gui, flight_plotter_instance, configs))
+  seriesBtn.grid(row=3,column=0, sticky="nsew")
 
   # Configurations 
   configsFrame = tk.Frame(gui)
@@ -124,6 +124,11 @@ def main():
   createConfigBtn.grid(row= 1, column=0, sticky="nsew")
 
   gui.mainloop()
+
+
+def ThrustCurveFlightSimGUI(master_gui, plotter_instance, configs):
+  ThrustCurveFlightSimApp(master_gui, plotter_instance, configs)
+  
 
 def NozzleIteratorGUI(gui):
 
@@ -466,7 +471,6 @@ def createNozzleIterator(popup):
 
 # @Brief Saves the current configurations to a JSON file
 # @param popup - The popup window where the configurations are saved
-
 def createImpulseCalculator(popup):
   guiFunction.clearWidgetColumn(popup, 1)
   labelName = "Impulse Calculator Config"
@@ -622,10 +626,10 @@ def addGrainWindow(frame, type, refreshCall):
 
   entries = guiFunction.createLabledEntryBoxes(frame, fields, dropDown)
 
-  saveButton = tk.Button(frame, text="Save Config", command=lambda: (guiFunction.saveEntries(configs,entries,"Grain", type), refreshCall()),
+  saveButton = tk.Button(frame, text="Save Config", command=lambda: (guiFunction.saveEntries(configs, entries, "Grain", type, frame), refreshCall()),
                         borderwidth=1, relief="solid")
   
-  saveButton.grid(row=8,column=5, padx=4, pady=4, sticky = 'se')
+  saveButton.grid(row=9,column=5, padx=4, pady=4, sticky = 'se')
 
 # @Brief Displays the grains in the grain geometry configuration GUI
 # @param functionFrame - The frame where the grains will be displayed
