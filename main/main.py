@@ -68,8 +68,8 @@ def main():
   # FOR UPLOAD DEV WORK COMMENT OUT FOR USER EXPERIENCE
   # ---------------------------------------------------
 
-  with open('./NozzleIterator/config.json', 'r') as file:
-    configs = json.load(file)
+  # with open('./NozzleIterator/config.json', 'r') as file:
+  #   configs = json.load(file)
 
   # initialize main GUI page
   gui = tk.Tk()
@@ -144,7 +144,7 @@ def NozzleIteratorGUI(gui):
     popup.grab_set()
     popup.protocol("WM_DELETE_WINDOW", on_popup_close)
 
-    popup.geometry("1250x720")
+    popup.geometry("1300x720")
     popup.resizable(False, False)
 
     OPimDir = FileUpload.resource_path("main/OpenPropLogo.png")
@@ -184,9 +184,9 @@ def NozzleIteratorGUI(gui):
     runButton = tk.Button(labelFrame, text="Run Nozzle Iterator", state='disabled')
     runButton.grid(row=2, column=0, sticky='nsew')
 
-    placeholder_canvas = tk.Canvas(graphsFrame, width=700, height=440, highlightthickness=0)
+    placeholder_canvas = tk.Canvas(graphsFrame, width=750, height=440, highlightthickness=0)
     placeholder_canvas.grid(row=1, column=0, sticky='nsew', pady=2, columnspan=2)
-    text_id = placeholder_canvas.create_text(350, 220, text="No simulation results yet", font=('Arial', 16), fill='gray')
+    text_id = placeholder_canvas.create_text(375, 220, text="No simulation results yet", font=('Arial', 16), fill='gray')
 
     simSuccesslabel = tk.Label(graphsFrame, text="")
     simSuccesslabel.grid(row=0, column=0, sticky='ew', columnspan=2)
@@ -271,7 +271,7 @@ def NozzleIteratorGUI(gui):
 
             if result is not None:
                 simImage = result.plotSim()
-                resized = simImage.resize((700, 440))
+                resized = simImage.resize((750, 440))
                 tk_simImage = ImageTk.PhotoImage(resized)
 
                 simSuccesslabel.config(text="Simulation Results")
@@ -735,6 +735,13 @@ def copySelectedGrain(grainName):
     print(f"Invalid grain index: {grainIndex}")
   
 # Standard Boiler plate to run the main function 
+# Freezes main when subproccess is running as an exe
 if __name__ == '__main__':
-  main()
+    import multiprocessing
+    multiprocessing.freeze_support()  # Required when using multiprocessing in PyInstaller on Windows
+
+    # Prevent the GUI from starting in subprocesses when frozen into an .exe
+    if sys.argv[0].endswith("main.exe") or sys.argv[0].endswith("main.py"):
+        main()
+
 
