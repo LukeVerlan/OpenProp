@@ -25,7 +25,6 @@ import time
 
 # Custom Classes
 from NozzleIterator.ConfigWrapper import ConfigWrapper
-from NozzleIterator.SimulationUI import SimulationUI
 
 # Multicore processing tools
 import concurrent.futures
@@ -52,7 +51,7 @@ def main(NIconfig):
   bestConfiguration = iteration(NIconfig["Nozzle"], motor, max_threads, parallel_mode)
 
   (simRes, nozzle) = bestConfiguration
-  return iterationResult(simRes, nozzle, NIconfig['Nozzle'])
+  return simRes, nozzle, NIconfig['Nozzle']
 
 # Brief - Parse the configuration files
 # Parameters - config file 
@@ -106,7 +105,6 @@ def iteration(nozzleConfig, motor, max_threads=None, parallel_mode=True):
     throatLength_vals = frange(nozzleConfig["minLen"], nozzleConfig["maxLen"], stepSize)
     combinations = list(product(throat_vals, throatLength_vals))
 
-    print(f"\nPreparing {len(combinations)} simulations...")
     start_time = time.perf_counter()
 
     # Fallback container
@@ -128,7 +126,6 @@ def iteration(nozzleConfig, motor, max_threads=None, parallel_mode=True):
                         if result is not None:
                             results.append(result)
         except Exception as e:
-            print(f"\n Parallel execution failed: {e}\nFalling back to sequential mode...\n")
             results = run_simulations_sequentially(combinations, nozzleConfig, motor)
     else:
         results = run_simulations_sequentially(combinations, nozzleConfig, motor)
@@ -141,11 +138,9 @@ def iteration(nozzleConfig, motor, max_threads=None, parallel_mode=True):
             bestNozzle = nozzle
 
     elapsed_time = time.perf_counter() - start_time
-    print(f"\nCompleted {len(results)} successful simulations in {elapsed_time:.2f} seconds")
     return bestSim, bestNozzle
 
 def run_simulations_sequentially(combinations, nozzleConfig, motor):
-    print("Running sequentially (1 core)...")
     results = []
     for throat, throatLen in combinations:
         result = simulate_point(throat, throatLen, nozzleConfig, motor)
@@ -220,14 +215,6 @@ def calcConvergenceHalfAngle(dia, len, throatDia, throatLen, exitHalf, exitDia):
 
   # Solve Convergence half angle
   return math.degrees(math.atan((r_total-r_throat)/lenConv))
-
-
-# Brief - print out and format the results of the motor test
-# param simRes - simulation result
-# param nozzle - winning nozzle 
-def iterationResult(simRes, nozzle, NIconfig):
-  return SimulationUI(simRes, nozzle, NIconfig)
-
 
 # Brief - Determines if the simluation should be prefered to the current best
 # param priority - criteria to base preference on

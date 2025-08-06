@@ -28,6 +28,7 @@ import guiFunction
 
 # Tool Files
 from NozzleIterator import NozzleIterator
+from NozzleIterator.SimulationUI import SimulationUI
 from impulseCalcGUI import ImpulseCalculatorApp
 from impulseCalc.graphingTools import FlightDataPlotter
 from impulseCalc import ImpulseCalculator # Module for ImpulseCalculator.main
@@ -67,8 +68,8 @@ def main():
   # FOR UPLOAD DEV WORK COMMENT OUT FOR USER EXPERIENCE
   # ---------------------------------------------------
 
-  # with open('./NozzleIterator/config.json', 'r') as file:
-  #   configs = json.load(file)
+  with open('./NozzleIterator/config.json', 'r') as file:
+    configs = json.load(file)
 
   # initialize main GUI page
   gui = tk.Tk()
@@ -128,165 +129,181 @@ def main():
 
 def ThrustCurveFlightSimGUI(master_gui, plotter_instance, configs):
   ThrustCurveFlightSimApp(master_gui, plotter_instance, configs)
-  
 
+  
+import threading
+import gc
 def NozzleIteratorGUI(gui):
 
-  OPimDir = FileUpload.resource_path("main/OpenPropLogo.png")
+    def on_popup_close():
+        plt.close('all')
+        popup.destroy()
 
-  OPim = Image.open(OPimDir)
-  resizedOPim = OPim.resize((200,625))
-  tk_OPim = ImageTk.PhotoImage(resizedOPim)
+    popup = tk.Toplevel()
+    popup.transient(gui)  # Keep it on top of main window
+    popup.grab_set()
+    popup.protocol("WM_DELETE_WINDOW", on_popup_close)
 
-  popup=tk.Toplevel()
+    popup.geometry("1250x720")
+    popup.resizable(False, False)
 
-  popup.transient(gui) # Keep it on top of main window
-  popup.grab_set()   
+    OPimDir = FileUpload.resource_path("main/OpenPropLogo.png")
+    OPim = Image.open(OPimDir)
+    resizedOPim = OPim.resize((200, 625))
+    tk_OPim = ImageTk.PhotoImage(resizedOPim)
 
-  popup.geometry("1250x720")
-  popup.resizable(False, False) #bastard man
+    labelFrame = tk.Frame(popup, borderwidth=1, relief="solid")
+    labelFrame.grid(row=0, column=0, sticky='nsew')
+    labelFrame.columnconfigure(0, weight=1)
+    labelFrame.rowconfigure([0, 1], weight=1)
 
-  labelFrame = tk.Frame(popup, borderwidth=1, relief="solid")
-  labelFrame.grid(row=0, column=0, sticky='nsew')
+    logoFrame = tk.Frame(popup, borderwidth=1, relief='solid')
+    logoFrame.grid(row=1, column=0, sticky='nsw')
+    logoLabel = tk.Label(logoFrame, image=tk_OPim)
+    logoLabel.grid(row=0, column=0, sticky='nsew')
+    logoLabel.image = tk_OPim
 
-  labelFrame.columnconfigure(0, weight=1)
-  labelFrame.rowconfigure([0,1], weight=1)
+    graphsFrame = tk.Frame(popup)
+    graphsFrame.grid(row=0, column=1, sticky='nsew', rowspan=2)
+    graphsFrame.rowconfigure([0, 1, 2, 3], weight=1)
 
-  logoFrame= tk.Frame(popup, borderwidth=1, relief='solid')
-  logoFrame.grid(row=1, column=0,sticky='nsw')
+    functionsFrame = tk.Frame(popup, borderwidth=1, relief='solid')
+    functionsFrame.grid(row=0, column=2, sticky='nsew', rowspan=2)
+    functionsFrame.columnconfigure(0, weight=1)
 
-  logoLabel = tk.Label(logoFrame,image=tk_OPim)
-  logoLabel.grid(row=0,column=0, sticky='nsew')
+    label = tk.Label(labelFrame, text="Nozzle Iterator Configuration", font=('Arial', 10, 'bold'))
+    label.grid(row=0, column=0, pady=1, sticky='nsew')
 
-  logoLabel.image = tk_OPim
+    # Exit button with cleanup
+    exitButton = tk.Button(labelFrame, text="exit", command=on_popup_close, borderwidth=1, relief='solid')
+    exitButton.grid(row=3, column=0, pady=1, sticky='nsew')
 
-  graphsFrame = tk.Frame(popup)
-  graphsFrame.grid(row=0, column=1, sticky='nsew',rowspan=2)
-  graphsFrame.rowconfigure([0,1,2,3], weight=1)
+    isValidLabel = tk.Label(labelFrame, text="")
+    isValidLabel.grid(row=1, column=0, pady=2, padx=2, sticky='nsew')
 
-  functionsFrame = tk.Frame(popup, borderwidth=1, relief='solid')
-  functionsFrame.grid(row=0, column=2, sticky='nsew', rowspan=2)
+    runButton = tk.Button(labelFrame, text="Run Nozzle Iterator", state='disabled')
+    runButton.grid(row=2, column=0, sticky='nsew')
 
-  functionsFrame.columnconfigure(0,weight=1)
+    placeholder_canvas = tk.Canvas(graphsFrame, width=700, height=440, highlightthickness=0)
+    placeholder_canvas.grid(row=1, column=0, sticky='nsew', pady=2, columnspan=2)
+    text_id = placeholder_canvas.create_text(350, 220, text="No simulation results yet", font=('Arial', 16), fill='gray')
 
-  # Create a label for the Nozzle Iterator
-  label = tk.Label(labelFrame, text="Nozzle Iterator Configuration", font=('Arial',10,'bold'))
-  label.grid(row=0, column=0, pady=1, sticky='nsew')
-  
-  exitButton = tk.Button(labelFrame, text="exit", command=lambda: (plt.close('all'), popup.destroy()), borderwidth=1, relief='solid')
-  exitButton.grid(row=3,column=0, pady=1, sticky='nsew')
+    simSuccesslabel = tk.Label(graphsFrame, text="")
+    simSuccesslabel.grid(row=0, column=0, sticky='ew', columnspan=2)
 
-  # Predefine placeholders for layout consistency
-  isValidLabel = tk.Label(labelFrame, text="")
-  isValidLabel.grid(row=1, column=0, pady=2, padx=2, sticky='nsew')
+    simResultsPeak = tk.Label(graphsFrame, text="", justify='left')
+    simResultsPeak.grid(row=2, column=0, sticky='nsew', pady=2)
 
-  runButton = tk.Button(labelFrame, text="Run Nozzle Iterator", state='disabled')
-  runButton.grid(row=2, column=0, sticky='nsew')
+    simResultsGeneral = tk.Label(graphsFrame, text="", justify='left')
+    simResultsGeneral.grid(row=2, column=1, sticky='nsew', pady=2)
 
-  # Create a fixed-size Canvas as placeholder for the graph
-  placeholder_canvas = tk.Canvas(graphsFrame, width=700, height=440, highlightthickness=0)
-  placeholder_canvas.grid(row=1, column=0, sticky='nsew', pady=2, columnspan=2)
-  text_id = placeholder_canvas.create_text(350, 220, text="No simulation results yet", font=('Arial', 16), fill='gray')
+    nozzleResults = tk.Label(graphsFrame, text="", borderwidth=1, relief='solid', justify='left')
+    nozzleResults.grid(row=3, column=0, sticky='nsew', pady=2, columnspan=2)
 
+    printAsCSVbutton = tk.Button(functionsFrame, text='Save Thrust Curve as CSV', borderwidth=1, relief='solid', state='disabled')
+    printAsCSVbutton.grid(row=0, column=0, sticky='nsew')
 
-  # Increase scroll window height
-  configText = tk.Text(functionsFrame, height=30, width=40, wrap='word', borderwidth=1, relief='solid')
-  configText.grid(row=2, column=0, sticky='nsew', pady=(10, 0))
+    saveButton = tk.Button(functionsFrame, text='Save Nozzle Statistics as txt', borderwidth=1, relief='solid', state='disabled')
+    saveButton.grid(row=1, column=0, sticky='nsew', pady=2)
 
-  scroll = tk.Scrollbar(functionsFrame, command=configText.yview)
-  scroll.grid(row=2, column=1, sticky='ns', pady=(10, 0))
-  configText.config(yscrollcommand=scroll.set)
+    configText = tk.Text(functionsFrame, height=30, width=40, wrap='word', borderwidth=1, relief='solid')
+    configText.grid(row=2, column=0, sticky='nsew', pady=(10, 0))
 
-  # Make sure it's available in other scopes
-  configText.config(state='disabled')
-
-
-  if FileUpload.hasConfigs(configs, 'NozzleIterator'):
-    isValidLabel.config(text="Valid Config Found", fg="green")
-    runButton.config(state='normal', command=lambda: runNozzleIterator())
-
-    unit_map = {
-        "minDia": "m",
-        "maxDia": "m",
-        "minLen": "m",
-        "maxLen": "m",
-        "exitHalf": "deg",
-        "SlagCoef": "(m·Pa)/s",
-        "ErosionCoef": "s/(m·Pa)",
-        "Efficiency": "",
-        "nozzleDia": "m",
-        "nozzleLength": "m",
-        "minHalfConv": "deg",
-        "maxHalfConv": "deg",
-        "iteration_step_size": "m",
-        "preference": "",
-        "parallel_mode": "",
-        "iteration_threads": "",
-        "exitDia": "m"
-    }
-
-    # Clear and update the config text
-    configText.config(state='normal')
-    configText.delete('1.0', tk.END)
-    configText.insert(
-        '1.0',
-        '\n'.join([
-            f"{key} : {value} {unit_map.get(key, '')}".strip()
-            for key, value in configs["Nozzle"].items()
-        ])
-    )
+    scroll = tk.Scrollbar(functionsFrame, command=configText.yview)
+    scroll.grid(row=2, column=1, sticky='ns', pady=(10, 0))
+    configText.config(yscrollcommand=scroll.set)
     configText.config(state='disabled')
 
-  else:
-    isValidLabel.config(text='Invalid Config', fg="red")
-    runButton.config(state='disabled')
+    simGraph = None  # To hold the simulation graph label widget
 
+    if FileUpload.hasConfigs(configs, 'NozzleIterator'):
+        isValidLabel.config(text="Valid Config Found", fg="green")
+        runButton.config(state='normal', command=lambda: runNozzleIterator())
 
-  def runNozzleIterator():
-      # Remove placeholder
-      placeholder_canvas.itemconfig(text_id, text='Running...')
-      popup.update()
+        unit_map = {
+            "minDia": "m",
+            "maxDia": "m",
+            "minLen": "m",
+            "maxLen": "m",
+            "exitHalf": "deg",
+            "SlagCoef": "(m·Pa)/s",
+            "ErosionCoef": "s/(m·Pa)",
+            "Efficiency": "",
+            "nozzleDia": "m",
+            "nozzleLength": "m",
+            "minHalfConv": "deg",
+            "maxHalfConv": "deg",
+            "iteration_step_size": "m",
+            "preference": "",
+            "parallel_mode": "",
+            "iteration_threads": "",
+            "exitDia": "m"
+        }
 
-      NIconfig = copy.deepcopy(configs)
+        configText.config(state='normal')
+        configText.delete('1.0', tk.END)
+        configText.insert(
+            '1.0',
+            '\n'.join([
+                f"{key} : {value} {unit_map.get(key, '')}".strip()
+                for key, value in configs["Nozzle"].items()
+            ])
+        )
+        configText.config(state='disabled')
 
-      result = NozzleIterator.main(NIconfig)
+    else:
+        isValidLabel.config(text='Invalid Config', fg="red")
+        runButton.config(state='disabled')
 
-      simSuccesslabel = tk.Label(graphsFrame, text="")
-      simSuccesslabel.grid(row=0,column=0,sticky='ew', columnspan=2)
+    def runNozzleIterator():
+        nonlocal simGraph
+        placeholder_canvas.itemconfig(text_id, text='Running...')
+        popup.update()
 
-      if result is not None:
-        
-        simImage = result.plotSim()
-        resized = simImage.resize((700, 440))
-        tk_simImage = ImageTk.PhotoImage(resized)
+        def worker():
+            NIconfig = copy.deepcopy(configs)
+            simRes, nozzleDict, nozzleIteratorParams = NozzleIterator.main(NIconfig)
+            popup.after(0, update_gui, simRes, nozzleDict, nozzleIteratorParams)
 
-        simSuccesslabel.config(text="Simulation Results")
+        def update_gui(simRes, nozzleDict, nozzleIteratorParams):
+            nonlocal simGraph
+            result = SimulationUI(simRes, nozzleDict, nozzleIteratorParams)
 
-        simGraph = tk.Label(graphsFrame, image=tk_simImage, borderwidth=1, relief='solid')
-        simGraph.grid(row=1,column=0, sticky='nsew', pady=2, columnspan=2)
-        simGraph.image = tk_simImage
+            if result is not None:
+                simImage = result.plotSim()
+                resized = simImage.resize((700, 440))
+                tk_simImage = ImageTk.PhotoImage(resized)
 
-        simResultsPeak = tk.Label(graphsFrame, text=result.peakValues())
-        simResultsPeak.grid(row=2,column=0, sticky= 'nsew', pady=2)
+                simSuccesslabel.config(text="Simulation Results")
 
-        simResultsGeneral = tk.Label(graphsFrame, text= result.generalValues())
-        simResultsGeneral.grid(row=2, column=1, sticky='nsew', pady=2)
+                # Destroy old image widget and clear reference
+                if simGraph is not None:
+                    simGraph.destroy()
+                    simGraph.image = None
+                    simGraph = None
 
-        nozzleResults = tk.Label(graphsFrame, text=result.nozzleStatistics(), borderwidth=1, relief='solid')
-        nozzleResults.grid(row=3,column=0, sticky='nsew', pady=2, columnspan=2)
+                simGraph = tk.Label(graphsFrame, image=tk_simImage, borderwidth=1, relief='solid')
+                simGraph.grid(row=1, column=0, sticky='nsew', pady=2, columnspan=2)
+                simGraph.image = tk_simImage
 
-        printAsCSVbutton = tk.Button(functionsFrame, text='Save Thrust Curve as CSV', 
-                                     command=lambda: result.exportThrustCurve(fd.asksaveasfilename()),
-                                     borderwidth=1, relief='solid')
-        printAsCSVbutton.grid(row=0, column=0, sticky='nsew')
+                simResultsPeak.config(text=result.peakValues())
+                simResultsGeneral.config(text=result.generalValues())
+                nozzleResults.config(text=result.nozzleStatistics())
 
-        saveButton = tk.Button(functionsFrame, text='Save Nozzle Statistics as txt', 
-                              command=lambda: result.exportNozzleStats(fd.asksaveasfilename()),
-                              borderwidth=1, relief='solid')
-        saveButton.grid(row=1, column=0, sticky='nsew', pady = 2 )
-      else:
-        # Handle failed criteria like a boss
-        simSuccesslabel.config(text="No valid nozzle found, please change your settings")
+                printAsCSVbutton.config(state='normal', command=lambda: result.exportThrustCurve(fd.asksaveasfilename()))
+                saveButton.config(state='normal', command=lambda: result.exportNozzleStats(fd.asksaveasfilename()))
+
+                placeholder_canvas.itemconfig(text_id, text='')  # Clear placeholder text
+
+                plt.close('all')  # Close matplotlib figures
+
+                gc.collect()  # Force garbage collection
+
+            else:
+                simSuccesslabel.config(text="No valid nozzle found, please change your settings")
+                placeholder_canvas.itemconfig(text_id, text="No simulation results yet")
+
+        threading.Thread(target=worker, daemon=True).start()
 
   
 def runNIandIC(gui):
