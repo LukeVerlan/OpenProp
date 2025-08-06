@@ -282,6 +282,12 @@ def NozzleIteratorGUI(gui):
         # Handle failed criteria like a boss
         simSuccesslabel.config(text="No valid nozzle found, please change your settings")
 
+  
+def runNIandIC(gui):
+  
+  NIconfig = copy.deepcopy(configs)
+  pass
+
 # @Brief Handles the creation of the configuration GUI, allows user to create or upload configs
 # @param gui - The main GUI window
 def handleCreateConfig(gui):
