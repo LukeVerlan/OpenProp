@@ -11,3 +11,5 @@ flight_plots/
 build/
 dist/
 *.spec
+hooks/
+venv/

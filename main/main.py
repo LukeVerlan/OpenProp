@@ -6,14 +6,9 @@ import PIL
 import PIL.Image
 import PIL.ImageTk
 
-
 # File handling libraries
 import os 
 import sys
-
-repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-if repo_root not in sys.path:
-    sys.path.insert(0, repo_root)
 
 # GUI library
 import tkinter as tk
@@ -151,7 +146,7 @@ def NozzleIteratorGUI(gui):
     popup.geometry("1300x720")
     popup.resizable(False, False)
 
-    OPimDir = FileUpload.resource_path("main/OpenPropLogo.png")
+    OPimDir = FileUpload.resource_path(os.path.join("main", "OpenPropLogo.png"))
     OPim = PIL.Image.open(OPimDir)
     resizedOPim = OPim.resize((200, 625))
     tk_OPim = PIL.ImageTk.PhotoImage(resizedOPim)

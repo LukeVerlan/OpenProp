@@ -8,9 +8,14 @@ import os
 
 import sys, os
 def resource_path(relative_path):
-    if hasattr(sys, '_MEIPASS'):
-        return os.path.join(sys._MEIPASS, relative_path)
-    return os.path.join(os.path.abspath("."), relative_path)
+    if getattr(sys, 'frozen', False):
+        # PyInstaller onefile: use the temporary unpacked folder
+        base_path = sys._MEIPASS
+    else:
+        # Normal Python execution
+        base_path = os.path.abspath(".")
+    return os.path.join(base_path, relative_path)
+
 
 # @brief Uploads a configuration file and updates the configs dictionary.
 # @param popup The popup window where the upload button is located.
