@@ -2,6 +2,11 @@
 #
 # Handles user input are calls upon sub files depending on what the user wants to do 
 
+import PIL
+import PIL.Image
+import PIL.ImageTk
+
+
 # File handling libraries
 import os 
 import sys
@@ -14,7 +19,6 @@ if repo_root not in sys.path:
 import tkinter as tk
 from tkinter import ttk 
 from tkinter import filedialog as fd 
-from PIL import Image, ImageTk
 
 # Python libraries
 import re
@@ -148,9 +152,9 @@ def NozzleIteratorGUI(gui):
     popup.resizable(False, False)
 
     OPimDir = FileUpload.resource_path("main/OpenPropLogo.png")
-    OPim = Image.open(OPimDir)
+    OPim = PIL.Image.open(OPimDir)
     resizedOPim = OPim.resize((200, 625))
-    tk_OPim = ImageTk.PhotoImage(resizedOPim)
+    tk_OPim = PIL.ImageTk.PhotoImage(resizedOPim)
 
     labelFrame = tk.Frame(popup, borderwidth=1, relief="solid")
     labelFrame.grid(row=0, column=0, sticky='nsew')
@@ -272,7 +276,7 @@ def NozzleIteratorGUI(gui):
             if result is not None:
                 simImage = result.plotSim()
                 resized = simImage.resize((750, 440))
-                tk_simImage = ImageTk.PhotoImage(resized)
+                tk_simImage = PIL.ImageTk.PhotoImage(resized)
 
                 simSuccesslabel.config(text="Simulation Results")
 
