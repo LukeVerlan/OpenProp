@@ -54,7 +54,7 @@ def configureNIDict(configs,entryVals):
   configs["Nozzle"]["nozzleDia"] = float(entryVals["Nozzle Diameter - m"])
   configs["Nozzle"]["iteration_step_size"] = float(entryVals["Iteraton Step Size - m"])
   configs["Nozzle"]["preference"] = str(entryVals["Search Preference"])
-  configs["Nozzle"]["parallel_mode"] = bool(entryVals["Parallel Simulation (Harder on computer)"])
+  configs["Nozzle"]["parallel_mode"] = entryVals["Parallel Simulation (Harder on computer)"].lower() == "true"
   configs["Nozzle"]["iteration_threads"] = int(entryVals["# Threads to allocate for simulation"])
   configs["Nozzle"]["exitDia"] = float(entryVals["Exit Diameter - m"])
 
