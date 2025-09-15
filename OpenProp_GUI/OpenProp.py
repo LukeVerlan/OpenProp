@@ -7,7 +7,6 @@ import PIL.Image
 import PIL.ImageTk
 
 # File handling libraries
-import os 
 import sys
 
 # GUI library
@@ -17,7 +16,6 @@ from tkinter import filedialog as fd
 
 # Python libraries
 import re
-import json
 import copy
 import matplotlib.pyplot as plt
 
@@ -146,7 +144,7 @@ def NozzleIteratorGUI(gui):
     popup.geometry("1300x720")
     popup.resizable(False, False)
 
-    OPimDir = FileUpload.resource_path(os.path.join("main", "OpenPropLogo.png"))
+    OPimDir = FileUpload.resource_path("./OpenProp.png")
     OPim = PIL.Image.open(OPimDir)
     resizedOPim = OPim.resize((200, 625))
     tk_OPim = PIL.ImageTk.PhotoImage(resizedOPim)
@@ -740,7 +738,7 @@ if __name__ == '__main__':
     multiprocessing.freeze_support()  # Required when using multiprocessing in PyInstaller on Windows
 
     # Prevent the GUI from starting in subprocesses when frozen into an .exe
-    if sys.argv[0].endswith("main.exe") or sys.argv[0].endswith("main.py"):
+    if sys.argv[0].endswith("OpenProp.exe") or sys.argv[0].endswith("OpenProp.py"):
         main()
 
 
