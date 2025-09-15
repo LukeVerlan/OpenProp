@@ -132,8 +132,11 @@ def ThrustCurveFlightSimGUI(master_gui, plotter_instance, configs):
 import threading
 import gc
 def NozzleIteratorGUI(gui):
+    
+    stop_event = threading.Event()
 
     def on_popup_close():
+        stop_event.set()     # signal worker to stop
         plt.close('all')
         popup.destroy()
 
@@ -259,11 +262,16 @@ def NozzleIteratorGUI(gui):
         popup.update()
 
         def worker():
+            if stop_event.is_set():
+                return
             NIconfig = copy.deepcopy(configs)
             simRes, nozzleDict, nozzleIteratorParams = NozzleIterator.main(NIconfig)
-            popup.after(0, update_gui, simRes, nozzleDict, nozzleIteratorParams)
+            if not stop_event.is_set():
+                popup.after(0, update_gui, simRes, nozzleDict, nozzleIteratorParams)
 
         def update_gui(simRes, nozzleDict, nozzleIteratorParams):
+            if not popup.winfo_exists():
+                return  # window was closed, skip GUI update
             nonlocal simGraph
             result = SimulationUI(simRes, nozzleDict, nozzleIteratorParams)
 
