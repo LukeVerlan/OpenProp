@@ -4,10 +4,6 @@
 # the defualt settings that openMotor uses. Currently compares the ISP between each nozzle.
 # Looking to make the criteria more customizable 
 
-# File handling libraries
-import sys
-import os
-
 # Open Motor Classes
 from .motorlib.propellant import Propellant
 from .motorlib.grains.bates import BatesGrain
