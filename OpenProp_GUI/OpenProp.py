@@ -1,6 +1,6 @@
 # MAIN
 #
-# Handles user input are calls upon sub files depending on what the user wants to do 
+# Handles user input and calls upon sub files depending on what the user wants to do 
 
 import PIL
 import PIL.Image
@@ -16,6 +16,7 @@ from tkinter import filedialog as fd
 
 # Python libraries
 import re
+import json
 import copy
 import matplotlib.pyplot as plt
 
@@ -65,8 +66,8 @@ def main():
   # FOR UPLOAD DEV WORK COMMENT OUT FOR USER EXPERIENCE
   # ---------------------------------------------------
 
-  # with open('./NozzleIterator/config.json', 'r') as file:
-  #   configs = json.load(file)
+  with open('./NozzleIterator/config.json', 'r') as file:
+    configs = json.load(file)
 
   # initialize main GUI page
   gui = tk.Tk()
@@ -144,7 +145,7 @@ def NozzleIteratorGUI(gui):
     popup.geometry("1300x720")
     popup.resizable(False, False)
 
-    OPimDir = FileUpload.resource_path("./OpenProp.png")
+    OPimDir = FileUpload.resource_path("./OpenPropLogo.png")
     OPim = PIL.Image.open(OPimDir)
     resizedOPim = OPim.resize((200, 625))
     tk_OPim = PIL.ImageTk.PhotoImage(resizedOPim)
