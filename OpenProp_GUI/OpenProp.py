@@ -129,9 +129,9 @@ def ThrustCurveFlightSimGUI(master_gui, plotter_instance, configs):
   ThrustCurveFlightSimApp(master_gui, plotter_instance, configs)
 
   
-import threading
-import gc
 def NozzleIteratorGUI(gui):
+    import threading
+    import gc
     
     stop_event = threading.Event()
 
