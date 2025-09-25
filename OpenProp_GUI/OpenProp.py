@@ -24,13 +24,17 @@ import matplotlib.pyplot as plt
 import FileUpload
 import guiFunction
 
-# Tool Files
+# Nozzle Iterator imports
 from NozzleIterator import NozzleIterator
-from NozzleIterator.SimulationUI import SimulationUI
+from NozzleIterator import nozzle_iterator_gui
+
+# Tool Files
 from impulseCalcGUI import ImpulseCalculatorApp
 from impulseCalc.graphingTools import FlightDataPlotter
 from impulseCalc import ImpulseCalculator # Module for ImpulseCalculator.main
 from thrustCurveSimulationApp import ThrustCurveFlightSimApp
+
+import config_creators
 
 from CurativeCalculator import CurativeCalculator
 
@@ -93,7 +97,7 @@ def main():
   functionsLabel.grid(row=0, column=0, sticky="nsew")
 
   nozzleBtn = ttk.Button(functionsFrame, text="Nozzle Iterator",
-                         command=lambda: NozzleIteratorGUI(gui))
+                         command=lambda: NozzleIteratorGUI(gui,configs))
   nozzleBtn.grid(row=1, column=0, sticky="nsew")
 
   impulseBtn = ttk.Button(functionsFrame, text="Impulse Calculator", 
@@ -124,198 +128,11 @@ def main():
 
   gui.mainloop()
 
-
 def ThrustCurveFlightSimGUI(master_gui, plotter_instance, configs):
   ThrustCurveFlightSimApp(master_gui, plotter_instance, configs)
-
   
-def NozzleIteratorGUI(gui):
-    import threading
-    import gc
-    
-    stop_event = threading.Event()
-
-    def on_popup_close():
-        stop_event.set()     # signal worker to stop
-        plt.close('all')
-        popup.destroy()
-
-    popup = tk.Toplevel()
-    popup.transient(gui)  # Keep it on top of main window
-    popup.grab_set()
-    popup.protocol("WM_DELETE_WINDOW", on_popup_close)
-
-    popup.geometry("1300x720")
-    popup.resizable(False, False)
-
-    OPimDir = FileUpload.resource_path("./OpenPropLogo.png")
-    OPim = PIL.Image.open(OPimDir)
-    resizedOPim = OPim.resize((200, 625))
-    tk_OPim = PIL.ImageTk.PhotoImage(resizedOPim)
-
-    labelFrame = tk.Frame(popup, borderwidth=1, relief="solid")
-    labelFrame.grid(row=0, column=0, sticky='nsew')
-    labelFrame.columnconfigure(0, weight=1)
-    labelFrame.rowconfigure([0, 1], weight=1)
-
-    logoFrame = tk.Frame(popup, borderwidth=1, relief='solid')
-    logoFrame.grid(row=1, column=0, sticky='nsw')
-    logoLabel = tk.Label(logoFrame, image=tk_OPim)
-    logoLabel.grid(row=0, column=0, sticky='nsew')
-    logoLabel.image = tk_OPim
-
-    graphsFrame = tk.Frame(popup)
-    graphsFrame.grid(row=0, column=1, sticky='nsew', rowspan=2)
-    graphsFrame.rowconfigure([0, 1, 2, 3], weight=1)
-
-    functionsFrame = tk.Frame(popup, borderwidth=1, relief='solid')
-    functionsFrame.grid(row=0, column=2, sticky='nsew', rowspan=2)
-    functionsFrame.columnconfigure(0, weight=1)
-
-    label = tk.Label(labelFrame, text="Nozzle Iterator Configuration", font=('Arial', 10, 'bold'))
-    label.grid(row=0, column=0, pady=1, sticky='nsew')
-
-    # Exit button with cleanup
-    exitButton = tk.Button(labelFrame, text="exit", command=on_popup_close, borderwidth=1, relief='solid')
-    exitButton.grid(row=3, column=0, pady=1, sticky='nsew')
-
-    isValidLabel = tk.Label(labelFrame, text="")
-    isValidLabel.grid(row=1, column=0, pady=2, padx=2, sticky='nsew')
-
-    runButton = tk.Button(labelFrame, text="Run Nozzle Iterator", state='disabled')
-    runButton.grid(row=2, column=0, sticky='nsew')
-
-    placeholder_canvas = tk.Canvas(graphsFrame, width=750, height=440, highlightthickness=0)
-    placeholder_canvas.grid(row=1, column=0, sticky='nsew', pady=2, columnspan=2)
-    text_id = placeholder_canvas.create_text(375, 220, text="No simulation results yet", font=('Arial', 16), fill='gray')
-
-    simSuccesslabel = tk.Label(graphsFrame, text="")
-    simSuccesslabel.grid(row=0, column=0, sticky='ew', columnspan=2)
-
-    simResultsPeak = tk.Label(graphsFrame, text="", justify='left')
-    simResultsPeak.grid(row=2, column=0, sticky='nsew', pady=2)
-
-    simResultsGeneral = tk.Label(graphsFrame, text="", justify='left')
-    simResultsGeneral.grid(row=2, column=1, sticky='nsew', pady=2)
-
-    nozzleResults = tk.Label(graphsFrame, text="", borderwidth=1, relief='solid', justify='left')
-    nozzleResults.grid(row=3, column=0, sticky='nsew', pady=2, columnspan=2)
-
-    printAsCSVbutton = tk.Button(functionsFrame, text='Save Thrust Curve as CSV', borderwidth=1, relief='solid', state='disabled')
-    printAsCSVbutton.grid(row=0, column=0, sticky='nsew')
-
-    saveButton = tk.Button(functionsFrame, text='Save Nozzle Statistics as txt', borderwidth=1, relief='solid', state='disabled')
-    saveButton.grid(row=1, column=0, sticky='nsew', pady=2)
-
-    configText = tk.Text(functionsFrame, height=30, width=40, wrap='word', borderwidth=1, relief='solid')
-    configText.grid(row=2, column=0, sticky='nsew', pady=(10, 0))
-
-    scroll = tk.Scrollbar(functionsFrame, command=configText.yview)
-    scroll.grid(row=2, column=1, sticky='ns', pady=(10, 0))
-    configText.config(yscrollcommand=scroll.set)
-    configText.config(state='disabled')
-
-    simGraph = None  # To hold the simulation graph label widget
-
-    if FileUpload.hasConfigs(configs, 'NozzleIterator'):
-        isValidLabel.config(text="Valid Config Found", fg="green")
-        runButton.config(state='normal', command=lambda: runNozzleIterator())
-
-        unit_map = {
-            "minDia": "m",
-            "maxDia": "m",
-            "minLen": "m",
-            "maxLen": "m",
-            "exitHalf": "deg",
-            "SlagCoef": "(m·Pa)/s",
-            "ErosionCoef": "s/(m·Pa)",
-            "Efficiency": "",
-            "nozzleDia": "m",
-            "nozzleLength": "m",
-            "minHalfConv": "deg",
-            "maxHalfConv": "deg",
-            "iteration_step_size": "m",
-            "preference": "",
-            "parallel_mode": "",
-            "iteration_threads": "",
-            "exitDia": "m"
-        }
-
-        configText.config(state='normal')
-        configText.delete('1.0', tk.END)
-        configText.insert(
-            '1.0',
-            '\n'.join([
-                f"{key} : {value} {unit_map.get(key, '')}".strip()
-                for key, value in configs["Nozzle"].items()
-            ])
-        )
-        configText.config(state='disabled')
-
-    else:
-        isValidLabel.config(text='Invalid Config', fg="red")
-        runButton.config(state='disabled')
-
-    def runNozzleIterator():
-        nonlocal simGraph
-        placeholder_canvas.itemconfig(text_id, text='Running...')
-        popup.update()
-
-        def worker():
-            if stop_event.is_set():
-                return
-            NIconfig = copy.deepcopy(configs)
-            simRes, nozzleDict, nozzleIteratorParams = NozzleIterator.main(NIconfig)
-            if not stop_event.is_set():
-                popup.after(0, update_gui, simRes, nozzleDict, nozzleIteratorParams)
-
-        def update_gui(simRes, nozzleDict, nozzleIteratorParams):
-            if not popup.winfo_exists():
-                return  # window was closed, skip GUI update
-            nonlocal simGraph
-            result = SimulationUI(simRes, nozzleDict, nozzleIteratorParams)
-
-            if result is not None:
-                simImage = result.plotSim()
-                resized = simImage.resize((750, 440))
-                tk_simImage = PIL.ImageTk.PhotoImage(resized)
-
-                simSuccesslabel.config(text="Simulation Results")
-
-                # Destroy old image widget and clear reference
-                if simGraph is not None:
-                    simGraph.destroy()
-                    simGraph.image = None
-                    simGraph = None
-
-                simGraph = tk.Label(graphsFrame, image=tk_simImage, borderwidth=1, relief='solid')
-                simGraph.grid(row=1, column=0, sticky='nsew', pady=2, columnspan=2)
-                simGraph.image = tk_simImage
-
-                simResultsPeak.config(text=result.peakValues())
-                simResultsGeneral.config(text=result.generalValues())
-                nozzleResults.config(text=result.nozzleStatistics())
-
-                printAsCSVbutton.config(state='normal', command=lambda: result.exportThrustCurve(fd.asksaveasfilename()))
-                saveButton.config(state='normal', command=lambda: result.exportNozzleStats(fd.asksaveasfilename()))
-
-                placeholder_canvas.itemconfig(text_id, text='')  # Clear placeholder text
-
-                plt.close('all')  # Close matplotlib figures
-
-                gc.collect()  # Force garbage collection
-
-            else:
-                simSuccesslabel.config(text="No valid nozzle found, please change your settings")
-                placeholder_canvas.itemconfig(text_id, text="No simulation results yet")
-
-        threading.Thread(target=worker, daemon=True).start()
-
-  
-def runNIandIC(gui):
-  
-  NIconfig = copy.deepcopy(configs)
-  pass
+def NozzleIteratorGUI(gui, configs):
+    nozzle_iterator_gui.run_gui(gui, configs)
 
 # @Brief Handles the creation of the configuration GUI, allows user to create or upload configs
 # @param gui - The main GUI window
@@ -340,19 +157,19 @@ def handleCreateConfig(gui):
   fakeFrame = tk.Frame(popup)
   fakeFrame.grid(row=1,column=1, sticky='nsew', padx=2)
 
-  propConfigLabel = tk.Button(optionsFrame, text="Create Propellant",command=lambda: createPropellant(popup))
+  propConfigLabel = tk.Button(optionsFrame, text="Create Propellant",command=lambda: config_creators.createPropellant(popup, configs))
   propConfigLabel.grid(row=0,column=0,sticky='nsew', pady=2)
 
-  grainConfigLabel = tk.Button(optionsFrame, text="Create Grain Geometry",command=lambda: createGrainGeometry(popup))
+  grainConfigLabel = tk.Button(optionsFrame, text="Create Grain Geometry",command=lambda: config_creators.createGrainGeometry(popup,configs))
   grainConfigLabel.grid(row=1,column=0,sticky='nsew', pady=2)
 
-  NIConfigLabel = tk.Button(optionsFrame, text="Create Nozzle Iterator Config",command=lambda: createNozzleIterator(popup))
+  NIConfigLabel = tk.Button(optionsFrame, text="Create Nozzle Iterator Config",command=lambda: config_creators.createNozzleIterator(popup,configs))
   NIConfigLabel.grid(row=2,column=0,sticky='nsew', pady=2)
 
-  OMConfigLabel = tk.Button(optionsFrame, text="Create OpenMotor settings config",command=lambda: createOMsettings(popup))
+  OMConfigLabel = tk.Button(optionsFrame, text="Create OpenMotor settings config",command=lambda: config_creators.createOMsettings(popup,configs))
   OMConfigLabel.grid(row=3,column=0,sticky='nsew', pady=2)
   
-  ICConfigLabel = tk.Button(optionsFrame, text="Create Impulse Calculator config",command=lambda: createImpulseCalculator(popup))
+  ICConfigLabel = tk.Button(optionsFrame, text="Create Impulse Calculator config",command=lambda: config_creators.createImpulseCalculator(popup,configs))
   ICConfigLabel.grid(row=4,column=0,sticky='nsew', pady=2)
 
   ICUploadLabel = tk.Button(optionsFrame, text="Upload Impulse Calculator config",command=lambda: FileUpload.uploadConfig(popup, configs, 'ImpulseCalculator'))
@@ -390,355 +207,6 @@ def handleCreateConfig(gui):
 
   ICSaveLabel = tk.Button(optionsFrame, text="Save Impulse Calculator config",command=lambda: saveCurrentConfigs(popup, 'ImpulseCalculator'))
   ICSaveLabel.grid(row=16,column=0,sticky='nsew', pady=2)
-
-# @Brief Creates the propellant configuration GUI
-# @param popup - The popup window where the propellant configuration will be created
-def createPropellant(popup):
-  guiFunction.clearWidgetColumn(popup, 1)
-  labelName = "Propellant Config"
-
-  fields = [
-            "Propellant Name", "Density - Kg/m^3", "Max Pressure - Pa", "Min Pressure - Pa",
-            "Burn Rate Coefficient - m/(s*Pa^n)" , "Burn Rate Exponent", "Specific Heat Ratio",
-            "Combustion Temperature - K", "Exhaust Molar Mass - g/mol"
-            ]
-  
-  if "Propellant" in configs and configs["Propellant"] is not None:
-    defaults = {
-        "Propellant Name": configs["Propellant"].get("name", ""),
-        "Density - Kg/m^3": configs["Propellant"].get("density", ""),
-        "Max Pressure - Pa": configs["Propellant"]["tabs"][0].get("maxPressure", ""),
-        "Min Pressure - Pa": configs["Propellant"]["tabs"][0].get("minPressure", ""),
-        "Burn Rate Coefficient - m/(s*Pa^n)": configs["Propellant"]["tabs"][0].get("a", ""),
-        "Burn Rate Exponent": configs["Propellant"]["tabs"][0].get("n", ""),
-        "Specific Heat Ratio": configs["Propellant"]["tabs"][0].get("k", ""),
-        "Combustion Temperature - K": configs["Propellant"]["tabs"][0].get("t", ""),
-        "Exhaust Molar Mass - g/mol": configs["Propellant"]["tabs"][0].get("m", "")
-    }
-  else:
-    defaults = None
-    
-  guiFunction.createSettingsPage(configs, labelName, fields, popup, defaults=defaults)
-
-# @Brief Creates the OpenMotor settings configuration GUI
-# @param popup - The popup window where the OpenMotor settings configuration will be created
-def createOMsettings(popup):
-  guiFunction.clearWidgetColumn(popup, 1)
-  labelName = "OpenMotor settings Config - this program features default OM settings unless changed here"
-
-  fields = [
-            "Max Pressure - Pa", "Max Mass Flux - kg/(m^2*s)", "Max Mach Number", "Min Port Throat Ratio",
-            "Flow Separation Precent - 0.##","Burnout Web Threshold - m","Burnout Thrust Threshold","Time step - s",
-            "Ambient Pressure - Pa", "Grain Map Dimension", "Separation Pressure Ratio" 
-            ]
-  
-  if "Motor" in configs and configs["Motor"] is not None:
-    defaults = {
-        "Max Pressure - Pa": configs["Motor"]["SimulationParameters"].get("maxPressure", ""),
-        "Max Mass Flux - kg/(m^2*s)": configs["Motor"]["SimulationParameters"].get("maxMassFlux", ""),
-        "Max Mach Number": configs["Motor"]["SimulationParameters"].get("maxMachNumber", ""),
-        "Min Port Throat Ratio": configs["Motor"]["SimulationParameters"].get("minPortThroat", ""),
-        "Flow Separation Precent - 0.##": configs["Motor"]["SimulationParameters"].get("flowSeparationWarnPercent", ""),
-        "Burnout Web Threshold - m": configs["Motor"]["SimulationBehavior"].get("burnoutWebThres", ""),
-        "Burnout Thrust Threshold": configs["Motor"]["SimulationBehavior"].get("burnoutThrustThres", ""),
-        "Time step - s": configs["Motor"]["SimulationBehavior"].get("timestep", ""),
-        "Ambient Pressure - Pa": configs["Motor"]["SimulationBehavior"].get("ambPressure", ""),
-        "Grain Map Dimension": configs["Motor"]["SimulationBehavior"].get("mapDim", ""),
-        "Separation Pressure Ratio": configs["Motor"]["SimulationBehavior"].get("sepPressureRatio", "")
-    }
-  else:
-    defaults = None
-  
-  guiFunction.createSettingsPage(configs,labelName, fields, popup, defaults=defaults)
-
-# @Brief Creates the Nozzle Iterator configuration GUI
-# @param popup - The popup window where the Nozzle Iterator configuration will be created
-def createNozzleIterator(popup):
-  guiFunction.clearWidgetColumn(popup, 1)
-  labelName = "Nozzle Iterator"
-  dropDown = { 
-                "Search Preference" : ["ISP", "ThrustCoef", "BurnTime", "Impulse", "AvgThrust"], 
-                "Parallel Simulation (Harder on computer)" : ["True", "False"]
-              }
-
-  fields = [
-            "Min Throat Diameter - m", "Max Throat Diameter - m", "Min Throat Length - m", "Max Throat Length - m", "Exit Diameter - m",
-            "Exit Half Angle - deg","Slag Coefficient - (m*Pa)/s","Erosion Coefficient - s/(m*Pa)","Efficiency - 0.##",
-            "Nozzle Diameter - m", "Nozzle Length - m", "Min Conv Half Angle - deg", "Max Conv Half Angle - deg",
-            "Iteraton Step Size - m", "# Threads to allocate for simulation"
-            ]
-  
-  if "Nozzle" in configs and configs["Nozzle"] is not None:
-    defaults = {
-        "Min Throat Diameter - m": configs["Nozzle"].get("minDia", ""),
-        "Max Throat Diameter - m": configs["Nozzle"].get("maxDia", ""),
-        "Min Throat Length - m": configs["Nozzle"].get("minLen", ""),
-        "Max Throat Length - m": configs["Nozzle"].get("maxLen", ""),
-        "Exit Half Angle - deg": configs["Nozzle"].get("exitHalf", ""),
-        "Slag Coefficient - (m*Pa)/s": configs["Nozzle"].get("SlagCoef", ""),
-        "Erosion Coefficient - s/(m*Pa)": configs["Nozzle"].get("ErosionCoef", ""),
-        "Efficiency - 0.##": configs["Nozzle"].get("Efficiency", ""),
-        "Nozzle Diameter - m": configs["Nozzle"].get("nozzleDia", ""),
-        "Nozzle Length - m": configs["Nozzle"].get("nozzleLength", ""),
-        "Min Conv Half Angle - deg": configs["Nozzle"].get("minHalfConv", ""),
-        "Max Conv Half Angle - deg": configs["Nozzle"].get("maxHalfConv", ""),
-        "Iteraton Step Size - m": configs["Nozzle"].get("iteration_step_size", ""),
-        "# Threads to allocate for simulation": configs["Nozzle"].get("iteration_threads", ""),
-        "Search Preference": configs["Nozzle"].get("preference", ""),
-        "Parallel Simulation (Harder on computer)": configs["Nozzle"].get("parallel_mode", ""),
-        "Exit Diameter - m": configs["Nozzle"].get("exitDia", "")
-    }
-  else:
-    defaults = None
-  
-  guiFunction.createSettingsPage(configs, labelName, fields, popup, dropDown=dropDown, defaults=defaults)
-
-# @Brief Saves the current configurations to a JSON file
-# @param popup - The popup window where the configurations are saved
-def createImpulseCalculator(popup):
-  guiFunction.clearWidgetColumn(popup, 1)
-  labelName = "Impulse Calculator Config"
-
-  fields = [
-            "Surface Pressure - Pa", "Surface Temperature - K", "Wind Velocity (- for into wind) - m/s", "Rail Angle (+ into wind) - radians", "Launch Site Elevation - m",
-            "Cross-Section Area - m^2", "Drag Coefficient", "NO Motor Mass - kg", "Specific Impulse - (N * s)/kg", "Desired Apogee - m", "Apogee Range (0.01 = within 1%)", 
-            "Burn Time Range %diff shown", "Burn Time Step - s", "Min Avg Thrust to Weight", "Bisection bound %diff", "Flight Sim min time step - s"
-  ]  
-
-  if "ImpulseCalculator" in configs and configs["ImpulseCalculator"] is not None:
-    defaults = {
-        "Surface Pressure - Pa": configs["ImpulseCalculator"].get("surfacePressure", ""),
-        "Surface Temperature - K": configs["ImpulseCalculator"].get("surfaceTemperature", ""),
-        "Wind Velocity (- for into wind) - m/s": configs["ImpulseCalculator"].get("windVelocity", ""),
-        "Rail Angle (+ into wind) - radians": configs["ImpulseCalculator"].get("railAngle", ""),
-        "Launch Site Elevation - m": configs["ImpulseCalculator"].get("launchSiteElevation", ""),
-        "Cross-Section Area - m^2": configs["ImpulseCalculator"].get("dragArea", ""),
-        "Drag Coefficient": configs["ImpulseCalculator"].get("dragCoefficient", ""),
-        "NO Motor Mass - kg": configs["ImpulseCalculator"].get("noMotorMass", ""),
-        "Specific Impulse - (N * s)/kg": configs["ImpulseCalculator"].get("specificImpulse", ""),
-        "Desired Apogee - m": configs["ImpulseCalculator"].get("desiredApogee", ""),
-        "Apogee Range (0.01 = within 1%)": configs["ImpulseCalculator"].get("apogeeThreshold", ""),
-        "Burn Time Range %diff shown": configs["ImpulseCalculator"].get("burnTimeRange", ""),
-        "Burn Time Step - s": configs["ImpulseCalculator"].get("burnTimeStep", ""),
-        "Min Avg Thrust to Weight": configs["ImpulseCalculator"].get("minAvgTtW", ""),
-        "Bisection bound %diff": configs["ImpulseCalculator"].get("bisectionBoundPercDiff", ""),
-        "Flight Sim min time step - s": configs["ImpulseCalculator"].get("deltaT", ""),
-    }
-  else:
-    defaults = None
-  guiFunction.createSettingsPage(configs, labelName, fields, popup, None, defaults)
-
-def saveCurrentConfigs(popup, type):
-
-  guiFunction.clearWidgetColumn(popup, 1)
-
-  guiFunction.createLabelFrame(popup, "Save " + type + " Settings")
-  frame = guiFunction.createBaseFrame(popup)
-  
-  frame.rowconfigure(0,weight=1)
-
-  if FileUpload.hasConfigs(configs, type):
-    if type == 'All':
-      cfg = configs
-    elif type == 'Grains': 
-      cfg = configs['Grains']
-    elif type == 'Propellant':
-      cfg = configs['Propellant']
-
-    elif type == 'Motor':
-      cfg = configs['Motor']
-    elif type == 'Nozzle':
-      cfg = configs['Nozzle']
-
-    elif type == 'ImpulseCalculator':
-      cfg = configs['ImpulseCalculator']
-
-    saveButton = tk.Button(frame, text='Save', command=lambda:FileUpload.cfgToJson(cfg, frame))
-    saveButton.grid(row=0,column=0, sticky="ew")
-  else:
-    invalidLabel = tk.Label(frame,text= type + " Config Not Found")
-    invalidLabel.grid(row=0, column=0, sticky='ew')
-
-# @Brief Creates the grain geometry configuration GUI
-# @param popup - The popup window where the grain geometry configuration will be created
-def createGrainGeometry(popup):
-  guiFunction.clearWidgetColumn(popup, 1)
-
-  def refresh():
-        createGrainGeometry(popup) 
-
-  labelFrame = tk.Frame(popup, borderwidth=1, relief="solid")
-  labelFrame.grid(row=0,column=1, sticky='nsew',columnspan=1, padx=2)
-  
-  buttonFrame = tk.Frame(popup)
-  buttonFrame.grid(row=1,column=1,sticky= 'nsew', padx=2,columnspan=1)
-
-  frameLabel = tk.Label(labelFrame, text="Grain Geometry Configurator", anchor="center", justify="center")
-  frameLabel.grid(row=0, column=0, sticky = 'nsew', padx=2,columnspan=1)
-
-  labelFrame.columnconfigure(0, weight=1)
-  buttonFrame.rowconfigure(0,weight=0)
-
-  functionFrame = tk.Frame(popup)
-  functionFrame.grid(row=2,column=1,sticky='nsew')
-
-  functionFrame.rowconfigure([0,1,2,3], weight=1)
-  functionFrame.columnconfigure([0,1,2,3], weight=1)
-  
-  addGrainButton = tk.Button(buttonFrame, text="Add Grain", command=lambda: addGrains(functionFrame, refresh))
-  addGrainButton.grid(row=0, column=0, padx=10, pady=15)
-
-  if "Grains" in configs and configs["Grains"] is not None:
-    deleteGrainButton = tk.Button(buttonFrame, text="Delete Grains", command=lambda: deleteGrains(functionFrame))
-    deleteGrainButton.grid(row=0,column=1,padx=10,pady=15)
-
-    viewGrainsButton = tk.Button(buttonFrame, text="View Grains", command=lambda: viewGrains(functionFrame))
-    viewGrainsButton.grid(row=0, column=2, padx=10,pady=15)
-
-    copyGrainsButton = tk.Button(buttonFrame, text="Copy Grains", command=lambda: copyGrains(functionFrame))
-    copyGrainsButton.grid(row=0, column=3, padx=10,pady=15)
-
-
-# @Brief Adds a grain to the grain geometry configuration GUI
-# @param frame - The frame where the grain will be added
-def addGrains(frame, refreshCall):
-
-  frame = guiFunction.clear(frame)
-
-  grainSelectFrame = tk.Frame(frame)
-  grainSelectFrame.grid(row=0,column=0,sticky='nsew')
-
-  grainAdditionFrame = tk.Frame(frame)
-  grainAdditionFrame.grid(row=1,column=0,sticky = 'nsew')
-
-  grainSelect = ttk.Combobox(grainSelectFrame, values=["BATES","FINOCYL"])
-  grainSelect.grid(row=0,column=0,sticky='nsew', padx=14, pady=6)
-  grainSelect.set("Select Grain")
-
-  grainSelectaddButton = tk.Button(grainSelectFrame, text="Set", command=lambda: addGrainWindow(grainAdditionFrame,
-                                                                                                 grainSelect.get(), 
-                                                                                                 refreshCall))
-  grainSelectaddButton.grid(row=0,column=1,sticky='nsew')
-
-  grainAdditionFrame.rowconfigure(0,weight=1)
-
-# @Brief Adds a grain window to the grain geometry configuration GUI
-# @param frame - The frame where the grain window will be added
-def addGrainWindow(frame, type, refreshCall):
-
-  if type == "BATES":
-    dropDown = { 
-                  "Inhibited Ends" : ["Top", "Bottom", "Neither"], 
-                }
-
-    fields = [
-              "Core Diameter - m", "Diameter - m", "Length - m" 
-              ]
-  elif type == "FINOCYL":
-
-    dropDown = { 
-                  "Inhibited Ends" : ["Top", "Bottom", "Neither"], 
-                  "Inverted Fins" : ["True", "False"]
-                }
-
-    fields = [
-              "Core Diameter - m", "Diameter - m", "Length - m", "Number of Fins", "Fin Length - m",
-              "Fin Width - m"
-              ]
-    
-  frame = guiFunction.clear(frame)
-
-  entries = guiFunction.createLabledEntryBoxes(frame, fields, dropDown)
-
-  saveButton = tk.Button(frame, text="Save Config", command=lambda: (guiFunction.saveEntries(configs, entries, "Grain", type, frame), refreshCall()),
-                        borderwidth=1, relief="solid")
-  
-  saveButton.grid(row=9,column=5, padx=4, pady=4, sticky = 'se')
-
-# @Brief Displays the grains in the grain geometry configuration GUI
-# @param functionFrame - The frame where the grains will be displayed
-def viewGrains(functionFrame):
-
-  functionFrame = guiFunction.clear(functionFrame)
-
-  num_grains = len(configs['Grains'])
-  for i in range(num_grains):
-    functionFrame.columnconfigure(i, weight=1)
-
-  guidanceLabel = tk.Label(
-        functionFrame,
-        text="Grains closest to the nozzle are listed first, grains furthest from the nozzle are listed last"
-    )
-  guidanceLabel.grid(row=0, column=0, columnspan=num_grains, sticky='ew')
-
-  row = 1
-  column = 0
-  grainCounter = 1
-
-  for grain in configs['Grains']:
-    if column == 4:
-      column = 0
-      row += 1  
-    
-    grainString = 'Grain ' + str(grainCounter) + ': \n'
-    grainCounter += 1
-    for key, value in grain.items():
-      grainString += f"{key}: {value}, \n"
-    
-    grainLabel = tk.Label(functionFrame, text=grainString[:-2])  # Remove the last comma and space
-    grainLabel.grid(row=row, column=column, sticky='nsew')
-
-    column += 1
-
-# @Brief Deletes a grain from the grain geometry configuration GUI
-# @param functionFrame - The frame where the grain will be deleted
-def deleteGrains(functionFrame):
-  functionFrame = guiFunction.clear(functionFrame)
-
-  
-  grainList = configs['Grains']
-  grainNames = [f"Grain {i + 1}" for i in range(len(grainList))]
-  grainSelect = ttk.Combobox(functionFrame, values=grainNames)
-  grainSelect.grid(row=0, column=0, sticky='nsew', padx=14, pady=6)
-  grainSelect.set("Select Grain to Delete")
-
-  deleteButton = tk.Button(functionFrame, text="Delete", command=lambda: deleteSelectedGrain(grainSelect.get()))
-  deleteButton.grid(row=0, column=1, sticky='nsew')
-
-# @Brief Deletes the selected grain from the grain geometry configuration GUI
-# @param grainName - The name of the grain to be deleted
-def deleteSelectedGrain(grainName):
-  grainIndex = int(re.search(r'\d+', grainName).group())
-  if 0 <= grainIndex < len(configs['Grains']):
-    del configs['Grains'][grainIndex]
-    print(f"Deleted {grainName}")
-  else:
-    print(f"Invalid grain index: {grainIndex}")
-
-# @Brief Copies a grain in the grain geometry configuration GUI
-# @param functionFrame - The frame where the grain will be copied
-def copyGrains(functionFrame):
-  functionFrame = guiFunction.clear(functionFrame)
-
-  grainlist = configs['Grains']
-  grainNames = [f"Grain {i + 1}" for i in range(len(grainlist))]
-  grainSelect = ttk.Combobox(functionFrame, values=grainNames)
-  grainSelect.grid(row=0, column=0, sticky='nsew', padx=14, pady=6)
-  grainSelect.set("Select Grain to Copy")
-  copyButton = tk.Button(functionFrame, text="Copy", command=lambda: copySelectedGrain(grainSelect.get()))
-  copyButton.grid(row=0, column=1, sticky='nsew')
-
-# @Brief Copies the selected grain in the grain geometry configuration GUI
-# @param grainName - The name of the grain to be copied
-def copySelectedGrain(grainName):
-  grainIndex = int(re.search(r'\d+', grainName).group()) - 1 # Convert to zero-based index
-  if 0 <= grainIndex < len(configs['Grains']):
-    grainToCopy = configs['Grains'][grainIndex]
-    newGrain = grainToCopy.copy()  # Create a copy of the selected grain
-    configs['Grains'].append(newGrain)  # Add the copied grain to the list
-    print(f"Copied {grainName}")
-  else:
-    print(f"Invalid grain index: {grainIndex}")
   
 # Standard Boiler plate to run the main function 
 # Freezes main when subproccess is running as an exe
