@@ -156,7 +156,7 @@ def run_gui(gui, configs):
 
             if result is not None:
                 simImage = result.plotSim()
-                resized = simImage.resize((750, 440))
+                resized = simImage.resize((740, 440))
                 tk_simImage = PIL.ImageTk.PhotoImage(resized)
 
                 simSuccesslabel.config(text="Simulation Results")

@@ -306,7 +306,7 @@ def copyGrains(functionFrame, configs):
   grainSelect = ttk.Combobox(functionFrame, values=grainNames)
   grainSelect.grid(row=0, column=0, sticky='nsew', padx=14, pady=6)
   grainSelect.set("Select Grain to Copy")
-  copyButton = tk.Button(functionFrame, text="Copy", command=lambda: copySelectedGrain(grainSelect.get()))
+  copyButton = tk.Button(functionFrame, text="Copy", command=lambda: copySelectedGrain(grainSelect.get(), configs))
   copyButton.grid(row=0, column=1, sticky='nsew')
 
 # @Brief Copies the selected grain in the grain geometry configuration GUI
