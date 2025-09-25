@@ -2,30 +2,19 @@
 #
 # Handles user input and calls upon sub files depending on what the user wants to do 
 
-import PIL
-import PIL.Image
-import PIL.ImageTk
-
 # File handling libraries
 import sys
 
 # GUI library
 import tkinter as tk
 from tkinter import ttk 
-from tkinter import filedialog as fd 
-
-# Python libraries
-import re
-import json
-import copy
-import matplotlib.pyplot as plt
 
 # Custom files
 import FileUpload
-import guiFunction
+import save_configs
+import config_creators
 
-# Nozzle Iterator imports
-from NozzleIterator import NozzleIterator
+# Nozzle Iterator import
 from NozzleIterator import nozzle_iterator_gui
 
 # Tool Files
@@ -33,8 +22,6 @@ from impulseCalcGUI import ImpulseCalculatorApp
 from impulseCalc.graphingTools import FlightDataPlotter
 from impulseCalc import ImpulseCalculator # Module for ImpulseCalculator.main
 from thrustCurveSimulationApp import ThrustCurveFlightSimApp
-
-import config_creators
 
 from CurativeCalculator import CurativeCalculator
 
@@ -84,7 +71,6 @@ def main():
   gui.columnconfigure(1, weight=1)
 
   flight_plotter_instance = FlightDataPlotter(output_dir="flight_plots")
-
 
   # Functions
   functionsFrame = ttk.Frame(gui)
@@ -145,7 +131,7 @@ def handleCreateConfig(gui):
   popup.columnconfigure(0, weight=1)
   popup.columnconfigure(1, weight=2)
   popup.columnconfigure(2, weight=1)
-  popup.geometry("1200x600") # width px by height px
+  popup.geometry("1300x600") # width px by height px
   popup.resizable(False, False)
 
   optionsFrame = tk.Frame(popup)
@@ -190,22 +176,22 @@ def handleCreateConfig(gui):
   preSavedConfigLabel = tk.Button(optionsFrame, text="Upload complete preset",command=lambda: FileUpload.uploadConfig(popup, configs, 'All'))
   preSavedConfigLabel.grid(row=10,column=0,sticky='nsew', pady=2)
 
-  propSaveLabel = tk.Button(optionsFrame, text="Save Propellant config",command=lambda: saveCurrentConfigs(popup, 'Propellant'))
+  propSaveLabel = tk.Button(optionsFrame, text="Save Propellant config",command=lambda: save_configs.saveCurrentConfigs(popup, 'Propellant', configs))
   propSaveLabel.grid(row=11,column=0,sticky='nsew', pady=2)
 
-  grainSaveLabel = tk.Button(optionsFrame, text="Save Grain config",command=lambda: saveCurrentConfigs(popup, 'Grains'))
+  grainSaveLabel = tk.Button(optionsFrame, text="Save Grain config",command=lambda: save_configs.saveCurrentConfigs(popup, 'Grains', configs))
   grainSaveLabel.grid(row=12,column=0,sticky='nsew', pady=2)
 
-  NIUSaveLabel = tk.Button(optionsFrame, text="Save Nozzle Iterator Config",command=lambda: saveCurrentConfigs(popup, 'Nozzle'))
+  NIUSaveLabel = tk.Button(optionsFrame, text="Save Nozzle Iterator Config",command=lambda: save_configs.saveCurrentConfigs(popup, 'Nozzle', configs))
   NIUSaveLabel.grid(row=13,column=0,sticky='nsew', pady=2)
 
-  OMSaveLabel = tk.Button(optionsFrame, text="Save Open Motor config",command=lambda: saveCurrentConfigs(popup, 'Motor'))
+  OMSaveLabel = tk.Button(optionsFrame, text="Save Open Motor config",command=lambda:  save_configs.saveCurrentConfigs(popup, 'Motor', configs))
   OMSaveLabel.grid(row=14,column=0,sticky='nsew', pady=2)
 
-  saveConfigs = tk.Button(optionsFrame, text="Save All Current Configs",command=lambda: saveCurrentConfigs(popup, 'All'))
+  saveConfigs = tk.Button(optionsFrame, text="Save All Current Configs",command=lambda: save_configs.saveCurrentConfigs(popup, 'All', configs))
   saveConfigs.grid(row=15,column=0,sticky='nsew', pady=2)
 
-  ICSaveLabel = tk.Button(optionsFrame, text="Save Impulse Calculator config",command=lambda: saveCurrentConfigs(popup, 'ImpulseCalculator'))
+  ICSaveLabel = tk.Button(optionsFrame, text="Save Impulse Calculator config",command=lambda: save_configs.saveCurrentConfigs(popup, 'ImpulseCalculator', configs))
   ICSaveLabel.grid(row=16,column=0,sticky='nsew', pady=2)
   
 # Standard Boiler plate to run the main function 
