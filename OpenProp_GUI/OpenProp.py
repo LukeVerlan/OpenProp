@@ -8,6 +8,7 @@ import sys
 # GUI library
 import tkinter as tk
 from tkinter import ttk 
+import PIL
 
 # Custom files
 import FileUpload
@@ -53,6 +54,8 @@ def main():
         }
     }
   
+  flight_plotter_instance = FlightDataPlotter(output_dir="flight_plots")
+  
   # ---------------------------------------------------
   # FOR UPLOAD DEV WORK COMMENT OUT FOR USER EXPERIENCE
   # ---------------------------------------------------
@@ -63,55 +66,64 @@ def main():
   # initialize main GUI page
   gui = tk.Tk()
   gui.title('OpenProp')
+  gui.geometry("1000x600")
+  gui.resizable(True, True)
 
-  gui.geometry("600x480")
-
-  gui.rowconfigure(0, weight=1)
+  # --- configure root grid ---
+  gui.rowconfigure(0, weight=1)   # logo row
+  gui.rowconfigure(1, weight=3)   # main content row
   gui.columnconfigure(0, weight=1)
   gui.columnconfigure(1, weight=1)
 
-  flight_plotter_instance = FlightDataPlotter(output_dir="flight_plots")
+  # --- logo frame ---
+  OPimDir = FileUpload.resource_path("./OP_ASSEM.jpg")
+  OPim = PIL.Image.open(OPimDir)
+  tk_OPim = PIL.ImageTk.PhotoImage(OPim)
 
-  # Functions
-  functionsFrame = ttk.Frame(gui)
-  functionsFrame.grid(row=0, column=0,sticky="nsew")
+  logoFrame = tk.Frame(gui, borderwidth=1, relief='solid')
+  logoFrame.grid(row=0, column=0, columnspan=2, sticky='nsew')
+  logoFrame.rowconfigure(0, weight=1)
+  logoFrame.columnconfigure(0, weight=1)
 
-  functionsFrame.rowconfigure([1, 2, 3, 4], weight=1)   # Allow buttons to expand vertically
-  functionsFrame.columnconfigure(0, weight=1)           # Allow buttons to fill horizontally
+  logoLabel = tk.Label(logoFrame, image=tk_OPim)
+  logoLabel.grid(row=0, column=0, sticky='nsew')
+  logoLabel.image = tk_OPim  
 
-  functionsLabel = tk.Label(functionsFrame, text="Functions")
+  # --- functions frame ---
+  functionsFrame = ttk.Frame(gui, padding=10)
+  functionsFrame.grid(row=1, column=0, sticky="nsew")
+  functionsFrame.rowconfigure(list(range(5)), weight=1)  # evenly spread rows
+  functionsFrame.columnconfigure(0, weight=1)
+
+  functionsLabel = tk.Label(functionsFrame, text="Functions", font=("Arial", 14, "bold"))
   functionsLabel.grid(row=0, column=0, sticky="nsew")
 
   nozzleBtn = ttk.Button(functionsFrame, text="Nozzle Iterator",
-                         command=lambda: NozzleIteratorGUI(gui,configs))
+                        command=lambda: NozzleIteratorGUI(gui, configs))
   nozzleBtn.grid(row=1, column=0, sticky="nsew")
 
   impulseBtn = ttk.Button(functionsFrame, text="Impulse Calculator", 
                           command=lambda: ImpulseCalculatorApp(gui, flight_plotter_instance, configs))
   impulseBtn.grid(row=2, column=0, sticky="nsew")
 
-  # curative hidden during dev
-  # curativeBtn = ttk.Button(functionsFrame, text="Curative Calculator")
-  # curativeBtn.grid(row=3, column=0, sticky="nsew")
+  seriesBtn = ttk.Button(functionsFrame, text="Flight Simulation w/ Thrust Curve", 
+                        command=lambda: ThrustCurveFlightSimGUI(gui, flight_plotter_instance, configs))
+  seriesBtn.grid(row=3, column=0, sticky="nsew")
 
-  seriesBtn = ttk.Button(functionsFrame, text="Flight Simulation w/ Thust Curve", 
-                         command=lambda: ThrustCurveFlightSimGUI(gui, flight_plotter_instance, configs))
-  seriesBtn.grid(row=3,column=0, sticky="nsew")
-
-  # Configurations 
-  configsFrame = tk.Frame(gui)
-  configsFrame.grid(row=0,column=1,sticky="nsew")
-
-  configsFrame.rowconfigure([1, 2, 3, 4, 5], weight=1)
+  # --- configurations frame ---
+  configsFrame = tk.Frame(gui, padx=10, pady=10)
+  configsFrame.grid(row=1, column=1, sticky="nsew")
+  configsFrame.rowconfigure(list(range(6)), weight=1)
   configsFrame.columnconfigure(0, weight=1)
 
-  configsLabel = tk.Label(configsFrame, text="Settings")
-  configsLabel.grid(row=0, column=0, sticky = "nsew")
+  configsLabel = tk.Label(configsFrame, text="Settings", font=("Arial", 14, "bold"))
+  configsLabel.grid(row=0, column=0, sticky="nsew")
 
   createConfigBtn = ttk.Button(configsFrame, text="Config Settings",
-                               command=lambda: handleCreateConfig(gui))
-  createConfigBtn.grid(row= 1, column=0, sticky="nsew")
+                              command=lambda: handleCreateConfig(gui))
+  createConfigBtn.grid(row=1, column=0, sticky="nsew")
 
+  # Start GUI
   gui.mainloop()
 
 def ThrustCurveFlightSimGUI(master_gui, plotter_instance, configs):
