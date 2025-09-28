@@ -289,7 +289,7 @@ def deleteGrains(functionFrame, configs):
 # @Brief Deletes the selected grain from the grain geometry configuration GUI
 # @param grainName - The name of the grain to be deleted
 def deleteSelectedGrain(grainName, configs):
-  grainIndex = int(re.search(r'\d+', grainName).group())
+  grainIndex = int(re.search(r'\d+', grainName).group()) - 1 #0 indexing
   if 0 <= grainIndex < len(configs['Grains']):
     del configs['Grains'][grainIndex]
     print(f"Deleted {grainName}")

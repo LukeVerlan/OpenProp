@@ -38,6 +38,7 @@ def main(NIconfig):
   # From config or CLI
   parallel_mode = NIconfig['Nozzle']['parallel_mode']
   max_threads = NIconfig['Nozzle']['iteration_threads']
+  NIconfig['Nozzle']['maxPressure'] = NIconfig['Motor']['SimulationParameters']['maxPressure']
 
   bestConfiguration = iteration(NIconfig["Nozzle"], motor, max_threads, parallel_mode)
 
@@ -178,7 +179,8 @@ def simulate_point(throat, throatLength, nozzleConfig, motor_serialized):
     simRes = motor.runSimulation()
 
     if simRes.success:
-        return simRes, nozzle
+        if simRes.getMaxPressure() <= nozzleConfig["maxPressure"]:
+            return simRes, nozzle
     return None
 
 # Brief - Calculates the convergence half angle of a nozzle given other dimensions

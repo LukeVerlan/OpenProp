@@ -39,6 +39,7 @@
         "nozzleLength": 0.189484, 
         "minHalfConv": 45,            
         "maxHalfConv": 75,
+        "maxPressure": 6895000,
         "preference" : "ISP",
         "iteration_step_size" : 0.001,
         "parallel_mode": true,
@@ -83,6 +84,5 @@
         "minAvgTtW" : 6.0,
         "bisectionBoundPercDiff" : 0.000001,
         "deltaT" : 0.05
-        
     }
 }

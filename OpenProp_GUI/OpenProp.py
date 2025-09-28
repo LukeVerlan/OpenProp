@@ -2,6 +2,8 @@
 #
 # Handles user input and calls upon sub files depending on what the user wants to do 
 
+import json
+
 # File handling libraries
 import sys
 
