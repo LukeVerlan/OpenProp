@@ -72,7 +72,7 @@ def configureGrainDict(configs, entryVals, type):
   configs["Grains"][-1]['length'] = float(entryVals["Length - m"])
   configs["Grains"][-1]['diameter'] = float(entryVals["Diameter - m"])
   configs["Grains"][-1]['coreDiameter'] = float(entryVals["Core Diameter - m"])
-  configs["Grains"][-1]['inhibitedEnds'] = bool(entryVals["Inhibited Ends"])
+  configs["Grains"][-1]['inhibitedEnds'] = str(entryVals["Inhibited Ends"])
 
 
   if type == "FINOCYL":
